@@ -4,12 +4,27 @@ import pygame
 from enum import Enum
 import sys
 import json
+from cryptography.fernet import Fernet
+from pathlib import Path
+from platformdirs import user_data_dir
+
+GAME_NAME = "SwiftyCards"
+DEV_NAME = "Apteryx"
+SAVE_DIR = Path(user_data_dir(GAME_NAME, DEV_NAME))
+SAVE_FILE_PATH = SAVE_DIR / "savegame.dat"
+EMPTY_SAVE = {
+                "gold": 0,
+                "stat_points": 0,
+                "hp_stat": 0,
+                "shield_stat": 0
+            }
 
 SCREEN_WIDTH = 480
 SCREEN_HEIGHT = 270
 DEBUG_MODE = 0
 SPRITESHEET_FILTER_COLOR = "#007F00"
 MAX_CARD_ID = 15
+KEY = b"v4YVv0PdJehS6eypHJ1PXPvvOTJtdlkdRcJzZUl6vEg="
 
 class Directories(Enum):
     ASSETS = "assets"
@@ -135,6 +150,12 @@ class Decks(Enum):
         "shield": 3
     }
 
+class DeckStrings(Enum):
+    BALANCED = "2x -2 DMG\n2x +3 HP\n1x +1 Shield\n1x -1 Countdown\n1x +1 Countdown"
+    AGGRESSIVE = "2x -2 DMG\n1x -5 DMG\n1x -1 Countdown\n1x -3 Countdown\n1x +1 Countdown\n1x +1 Shield"
+    DEFENSIVE = "1x +3 HP\n1x +5 HP\n2x +2 Shield\n1x +3 Countdown\n1x -1 Countdown\n1x -2 DMG"
+    UTILITY = "2x +3 Countdown\n2x -3 Countdown\n1x +3 HP\n1x +1 Shield\n1x -2 DMG"
+
 def get_image(name: str):
     if hasattr(sys, "_MEIPASS"): base_path = sys._MEIPASS
     else: base_path = os.path.abspath(".")
@@ -147,19 +168,27 @@ def get_sound(name: str):
     asset_path = os.path.join(base_path, Directories.ASSETS.value, Directories.SOUNDS.value, name)
     return pygame.mixer.Sound(asset_path)
 
-def load_game(filename: str):
-    try:
-        with open(filename, "r") as f:
-            data = json.load(f)
-        return data
-    except FileNotFoundError:
-        return {
-            "gold": 0,
-            "stat_points": 0,
-            "hp_stat": 0,
-            "shield_stat": 0
-        }
+def ensure_directory():
+    SAVE_DIR.mkdir(parents=True, exist_ok=True)
 
-def save_game(filename: str, data: dict):
-    with open(filename, "w+") as f:
-        json.dump(data, f, indent=4)
+def load_game():
+    if not SAVE_FILE_PATH.exists():
+        return EMPTY_SAVE
+
+    try:
+        with open(SAVE_FILE_PATH, "rb") as f:
+            encrypted = f.read()
+        decrypted = Fernet(KEY).decrypt(encrypted)
+        data = json.loads(decrypted.decode("utf-8"))
+        return data
+    except Exception:
+        return EMPTY_SAVE
+
+def save_game(data: dict):
+    try:
+        ensure_directory()
+        bytedata = json.dumps(data).encode("utf-8")
+        encrypted = Fernet(KEY).encrypt(bytedata)
+        with open(SAVE_FILE_PATH, "wb") as f:
+            f.write(encrypted)
+    except Exception: pass

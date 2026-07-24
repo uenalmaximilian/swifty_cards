@@ -17,7 +17,13 @@ class Game:
         self.title_font = pygame.font.SysFont("Consolas", 32, bold=True)
         self.contestant_font = pygame.font.SysFont("Consolas", 16)
 
-        self.spritesheets = {"cards": misc.Spritesheet("cards.png"), "buttons": misc.Spritesheet("buttons.png"), "archetypes": misc.Spritesheet("archetypes.png"), "misc": misc.Spritesheet("misc.png")}
+        self.spritesheets = {
+            "cards": misc.Spritesheet("cards.png"),
+            "buttons": misc.Spritesheet("buttons.png"),
+            "archetypes": misc.Spritesheet("archetypes.png"),
+            "misc": misc.Spritesheet("misc.png"),
+            "pictures": misc.Spritesheet("pictures.png")
+        }
         self.entities = entities if entities is not None else []
 
         self.delta_time = 0
@@ -39,6 +45,8 @@ class Game:
         self.stat_menu_rect: pygame.Rect = None
         self.stat_hp_rect: pygame.Rect = None
         self.stat_shield_rect: pygame.Rect = None
+        self.quit_rect: pygame.Rect = None
+        self.wipe_data_rect: pygame.Rect = None
 
         self.in_transition = False
         self.transition_timer = 0.0
@@ -48,7 +56,7 @@ class Game:
 
         self.is_fullscreen = False
 
-        self.gamesave = settings.load_game(f"save.json")
+        self.gamesave = settings.load_game()
 
     def toggle_fullscreen(self):
         self.is_fullscreen = not self.is_fullscreen
@@ -233,11 +241,31 @@ class Game:
         scaled_image = pygame.transform.scale(settings_menu_image, (btn_w, btn_h))
         self.surface.blit(scaled_image, self.settings_menu_rect)
 
+        btn_w, btn_h = 64, 24
+        self.quit_rect = pygame.Rect(0, 0, btn_w, btn_h)
+        self.quit_rect.topright = (settings.SCREEN_WIDTH - 5, 5)
+        if settings.DEBUG_MODE: pygame.draw.rect(self.surface, settings.DEBUG_COLORS.COLOR_7.value, self.quit_rect, width=0)
+        quit_button_image = self.spritesheets["buttons"].get_image(288, 0, 32, 12)
+        scaled_image = pygame.transform.scale(quit_button_image, (btn_w, btn_h))
+        self.surface.blit(scaled_image, self.quit_rect)
+
+        mouse_pos = pygame.mouse.get_pos()
+        if self.quit_rect.collidepoint(mouse_pos):
+            tooltip_text = self.contestant_font.render("pls dont quit :(", False, (230, 230, 230))
+            tooltip_text_rect = tooltip_text.get_rect()
+            tooltip_rect = pygame.Rect(0, 0, tooltip_text_rect.width, tooltip_text_rect.height)
+            tooltip_rect.topright = mouse_pos
+            pygame.draw.rect(self.surface, (20, 20, 20), tooltip_rect, width=0)
+            self.surface.blit(tooltip_text, tooltip_rect)
+
     def render_stat_menu(self):
         self.surface.fill((10, 10, 10))
 
         title = self.title_font.render("Stats", False, (230, 230, 230))
         self.surface.blit(title, title.get_rect(center=(settings.SCREEN_WIDTH // 2, 50)))
+
+        stat_points_text = self.font.render(f"Stat points: {self.gamesave["stat_points"]}", False, (230, 230, 230))
+        self.surface.blit(stat_points_text, stat_points_text.get_rect(topright=(settings.SCREEN_WIDTH - 5, 5)))
 
         btn_w, btn_h = 32 * 2, 12 * 2
         self.back_rect = pygame.Rect(5, 5, btn_w, btn_h)
@@ -266,6 +294,22 @@ class Game:
         scaled_image = pygame.transform.scale(shield_button_image, (btn_w, btn_h))
         self.surface.blit(scaled_image, self.stat_shield_rect)
 
+        mouse_pos = pygame.mouse.get_pos()
+        if self.stat_hp_rect.collidepoint(mouse_pos):
+            tooltip_text = self.font.render(f"HP Bonus: +{self.gamesave["hp_stat"]}", False, (230, 230, 230))
+            tooltip_text_rect = tooltip_text.get_rect()
+            tooltip_rect = pygame.Rect(0, 0, tooltip_text_rect.width, tooltip_text_rect.height)
+            tooltip_rect.bottomleft = mouse_pos
+            pygame.draw.rect(self.surface, (20, 20, 20), tooltip_rect, width=0)
+            self.surface.blit(tooltip_text, tooltip_rect)
+        elif self.stat_shield_rect.collidepoint(mouse_pos):
+            tooltip_text = self.font.render(f"Shield Bonus: +{self.gamesave["shield_stat"]}", False, (230, 230, 230))
+            tooltip_text_rect = tooltip_text.get_rect()
+            tooltip_rect = pygame.Rect(0, 0, tooltip_text_rect.width, tooltip_text_rect.height)
+            tooltip_rect.bottomleft = mouse_pos
+            pygame.draw.rect(self.surface, (20, 20, 20), tooltip_rect, width=0)
+            self.surface.blit(tooltip_text, tooltip_rect)
+
     def render_settings_menu(self):
         self.surface.fill((10, 10, 10))
 
@@ -289,6 +333,24 @@ class Game:
         scaled_image = pygame.transform.scale(fullscreen_button_image, (btn_w, btn_h))
         self.surface.blit(scaled_image, self.fullscreen_rect)
 
+        btn_w, btn_h = 32 * 2, 12 * 2
+        self.wipe_data_rect = pygame.Rect(0, 0, btn_w, btn_h)
+        self.wipe_data_rect.center = (settings.SCREEN_WIDTH // 2, settings.SCREEN_HEIGHT - 20)
+        if settings.DEBUG_MODE: pygame.draw.rect(self.surface, settings.DEBUG_COLORS.COLOR_5.value, self.wipe_data_rect, width=0)
+        wipe_button_image = self.spritesheets["buttons"].get_image(0, 12, 32, 12)
+        scaled_image = pygame.transform.scale(wipe_button_image, (btn_w, btn_h))
+        self.surface.blit(scaled_image, self.wipe_data_rect)
+
+        mouse_pos = pygame.mouse.get_pos()
+        if self.wipe_data_rect.collidepoint(mouse_pos):
+            tooltip_text = self.contestant_font.render("ACTIONS WILL TAKE PLACE INSTANTLY!\nONLY CLICK IF YOU ARE SURE!", False, (230, 230, 230))
+            tooltip_text_rect = tooltip_text.get_rect()
+            tooltip_rect = pygame.Rect(0, 0, tooltip_text_rect.width, tooltip_text_rect.height)
+            tooltip_rect.bottomleft = mouse_pos
+            tooltip_rect.centerx = mouse_pos[0]
+            pygame.draw.rect(self.surface, (20, 20, 20), tooltip_rect, width=0)
+            self.surface.blit(tooltip_text, tooltip_rect)
+
     def render_archetype_menu(self):
         self.surface.fill((10, 10, 25))
 
@@ -305,16 +367,34 @@ class Game:
         start_x = (settings.SCREEN_WIDTH - total_width) // 2
         btn_y = settings.SCREEN_HEIGHT // 2 - (btn_h // 2)
 
+        active_tooltip = None
+
         for i, archetype in enumerate(archetypes_list):
             btn_x = start_x + i * (btn_w + spacing)
             rect = pygame.Rect(btn_x, btn_y, btn_w, btn_h)
-
             self.archetype_menu_rects.append((rect, archetype))
-
             if settings.DEBUG_MODE: pygame.draw.rect(self.surface, settings.DEBUG_COLORS.COLOR_3.value, rect, width=0)
-
             archetype_image = self.spritesheets["archetypes"].get_image(i % 10 * btn_w, i // 10 * btn_h, btn_w, btn_h)
             self.surface.blit(archetype_image, rect)
+
+            mouse_pos = pygame.mouse.get_pos()
+            if rect.collidepoint(mouse_pos):
+                active_tooltip = archetype
+
+        if active_tooltip:
+            tooltip_text = self.font.render(f"{active_tooltip.name.lower().title()}\n{settings.DeckStrings[active_tooltip.name].value}", False, (230, 230, 230))
+            tooltip_text_rect = tooltip_text.get_rect()
+            tooltip_rect = pygame.Rect(0, 0, tooltip_text_rect.width, tooltip_text_rect.height)
+            tooltip_rect.bottomleft = mouse_pos
+            overflow_top = tooltip_rect.top < 0
+            if overflow_top: tooltip_rect.topleft = mouse_pos
+            if tooltip_rect.bottom > settings.SCREEN_HEIGHT:
+                if overflow_top: tooltip_rect.centery = mouse_pos[1]
+                else: tooltip_rect.bottom = mouse_pos[1]
+            overflow_right = tooltip_rect.right > settings.SCREEN_WIDTH
+            if overflow_right: tooltip_rect.right = mouse_pos[0]
+            pygame.draw.rect(self.surface, (20, 20, 20), tooltip_rect, width=0)
+            self.surface.blit(tooltip_text, tooltip_rect)
 
     def render_gameplay(self):
         self.surface.fill((0, 0, 0))
@@ -333,6 +413,8 @@ class Game:
 
         player_image_rect = pygame.Rect(3, 3, 32, 32)
         if settings.DEBUG_MODE: pygame.draw.rect(self.surface, settings.DEBUG_COLORS.COLOR_2.value, player_image_rect, width=0)
+        player_image = self.spritesheets["pictures"].get_image(0, 0, 32, 32)
+        self.surface.blit(player_image, player_image_rect)
         enemy_image_rect = pygame.Rect(settings.SCREEN_WIDTH - 35, 3, 32, 32)
         if settings.DEBUG_MODE: pygame.draw.rect(self.surface, settings.DEBUG_COLORS.COLOR_1.value, enemy_image_rect, width=0)
 
@@ -357,7 +439,7 @@ class Game:
         text_rect.center = player_max_shield_rect.center
         text_rect.y += 2
         self.surface.blit(player_shield_text, text_rect)
-        player_text = self.contestant_font.render(f"{self.player.archetype.name}", False, (230, 230, 230))
+        player_text = self.contestant_font.render(f"{self.player.archetype.name.lower().title()}", False, (230, 230, 230))
         archetype_rect = player_text.get_rect()
         archetype_rect.midtop = (player_max_shield_rect.centerx, player_max_shield_rect.bottom + 4)
         self.surface.blit(player_text, archetype_rect)
@@ -384,7 +466,7 @@ class Game:
         text_rect.center = enemy_max_shield_rect.center
         text_rect.y += 2
         self.surface.blit(enemy_shield_text, text_rect)
-        enemy_text = self.contestant_font.render(f"{self.opponent.archetype.name}", False, (230, 230, 230))
+        enemy_text = self.contestant_font.render(f"{self.opponent.archetype.name.lower().title()}", False, (230, 230, 230))
         archetype_rect = enemy_text.get_rect()
         archetype_rect.midtop = (enemy_max_shield_rect.centerx, enemy_max_shield_rect.bottom + 4)
         self.surface.blit(enemy_text, archetype_rect)
@@ -531,6 +613,12 @@ class Game:
                     elif self.state == settings.GameState.ARCHETYPECHOOSING.value:
                         if event.key == pygame.K_ESCAPE: self.trigger_transition(settings.GameState.MAINMENU.value, 1)
 
+                    elif self.state == settings.GameState.SETTINGSMENU.value:
+                        if event.key == pygame.K_ESCAPE: self.state = settings.GameState.MAINMENU.value
+
+                    elif self.state == settings.GameState.STATMENU.value:
+                        if event.key == pygame.K_ESCAPE: self.state = settings.GameState.MAINMENU.value
+
                 elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
                     mouse_pos = event.pos
 
@@ -548,6 +636,7 @@ class Game:
                         if self.menu_start_rect.collidepoint(mouse_pos): self.trigger_transition(settings.GameState.ARCHETYPECHOOSING.value, 1)
                         elif self.settings_menu_rect.collidepoint(mouse_pos): self.state = settings.GameState.SETTINGSMENU.value
                         elif self.stat_menu_rect.collidepoint(mouse_pos): self.state = settings.GameState.STATMENU.value
+                        elif self.quit_rect.collidepoint(mouse_pos): self.running = False
 
                     elif self.state == settings.GameState.ARCHETYPECHOOSING.value:
                         for rect, archetype in self.archetype_menu_rects:
@@ -564,11 +653,18 @@ class Game:
                     elif self.state == settings.GameState.SETTINGSMENU.value:
                         if self.back_rect.collidepoint(mouse_pos): self.state = settings.GameState.MAINMENU.value
                         elif self.fullscreen_rect.collidepoint(mouse_pos): self.toggle_fullscreen()
+                        elif self.wipe_data_rect.collidepoint(mouse_pos): self.gamesave = settings.EMPTY_SAVE
 
                     elif self.state == settings.GameState.STATMENU.value:
                         if self.back_rect.collidepoint(mouse_pos): self.state = settings.GameState.MAINMENU.value
-                        elif self.stat_hp_rect.collidepoint(mouse_pos): self.gamesave["hp_stat"] += 1
-                        elif self.stat_shield_rect.collidepoint(mouse_pos): self.gamesave["shield_stat"] += 1
+                        elif self.stat_hp_rect.collidepoint(mouse_pos):
+                            if self.gamesave["stat_points"] > 0:
+                                self.gamesave["stat_points"] -= 1
+                                self.gamesave["hp_stat"] += 1
+                        elif self.stat_shield_rect.collidepoint(mouse_pos):
+                            if self.gamesave["stat_points"] > 0:
+                                self.gamesave["stat_points"] -= 1
+                                self.gamesave["shield_stat"] += 1
 
                 if self.state == settings.GameState.PLAYING.value:
                     for obj in self.entities[:]: obj.handle_event(event, self)
@@ -581,6 +677,6 @@ class Game:
 
             self.delta_time = self.clock.tick(60) / 1000
 
-        settings.save_game("save.json", self.gamesave)
+        settings.save_game(self.gamesave)
         pygame.quit()
         sys.exit(0)
