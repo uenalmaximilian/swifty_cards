@@ -47,14 +47,16 @@ class Card(misc.Entity):
 
     def handle_event(self, event: pygame.Event, game):
         if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
-            game.last_action = settings.Actions.DUMPED
             if self.play_button_rect.collidepoint(event.pos):
                 game.countdown += self.card_type["countd"]
                 game.opponent.take_dmg(self.card_type["dmg"])
                 game.player.heal(hp=self.card_type["hp"], shield=self.card_type["shield"])
                 game.last_card_id = self.card_type["id"]
                 game.last_action = settings.Actions.PLAYED
-            self.dead = True
+                self.dead = True
+            elif self.discard_button_rect.collidepoint(event.pos):
+                game.last_action = settings.Actions.DUMPED
+                self.dead = True
 
     def render(self, screen: pygame.Surface, spritesheets: dict[str, misc.Spritesheet], hidden: bool = False, scale: float = 1.0):
         if self.sprite is None:
