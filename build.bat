@@ -2,6 +2,7 @@
 
 rm swiftycards.exe
 rm swiftycards.zip
+rm swiftycards_web.zip
 pyinstaller --onefile --icon=assets\images\icon.ico --noconsole --add-data "assets;assets" main.py
 rm main.spec
 mv dist\main.exe swiftycards.exe

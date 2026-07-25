@@ -269,22 +269,23 @@ class Game:
         scaled_image = pygame.transform.scale(settings_menu_image, (btn_w, btn_h))
         self.surface.blit(scaled_image, self.settings_menu_rect)
 
-        btn_w, btn_h = 64, 24
-        self.quit_rect = pygame.Rect(0, 0, btn_w, btn_h)
-        self.quit_rect.topright = (settings.SCREEN_WIDTH - 5, 5)
-        if settings.DEBUG_MODE: pygame.draw.rect(self.surface, settings.DEBUG_COLORS.COLOR_7.value, self.quit_rect, width=0)
-        quit_button_image = self.spritesheets["buttons"].get_image(288, 0, 32, 12)
-        scaled_image = pygame.transform.scale(quit_button_image, (btn_w, btn_h))
-        self.surface.blit(scaled_image, self.quit_rect)
+        if sys.platform != "emscripten":
+            btn_w, btn_h = 64, 24
+            self.quit_rect = pygame.Rect(0, 0, btn_w, btn_h)
+            self.quit_rect.topright = (settings.SCREEN_WIDTH - 5, 5)
+            if settings.DEBUG_MODE: pygame.draw.rect(self.surface, settings.DEBUG_COLORS.COLOR_7.value, self.quit_rect, width=0)
+            quit_button_image = self.spritesheets["buttons"].get_image(288, 0, 32, 12)
+            scaled_image = pygame.transform.scale(quit_button_image, (btn_w, btn_h))
+            self.surface.blit(scaled_image, self.quit_rect)
 
-        mouse_pos = pygame.mouse.get_pos()
-        if self.quit_rect.collidepoint(mouse_pos):
-            tooltip_text = self.contestant_font.render("pls dont quit :(", False, (230, 230, 230))
-            tooltip_text_rect = tooltip_text.get_rect()
-            tooltip_rect = pygame.Rect(0, 0, tooltip_text_rect.width, tooltip_text_rect.height)
-            tooltip_rect.topright = mouse_pos
-            pygame.draw.rect(self.surface, (20, 20, 20), tooltip_rect, width=0)
-            self.surface.blit(tooltip_text, tooltip_rect)
+            mouse_pos = pygame.mouse.get_pos()
+            if self.quit_rect.collidepoint(mouse_pos):
+                tooltip_text = self.contestant_font.render("pls dont quit :(", False, (230, 230, 230))
+                tooltip_text_rect = tooltip_text.get_rect()
+                tooltip_rect = pygame.Rect(0, 0, tooltip_text_rect.width, tooltip_text_rect.height)
+                tooltip_rect.topright = mouse_pos
+                pygame.draw.rect(self.surface, (20, 20, 20), tooltip_rect, width=0)
+                self.surface.blit(tooltip_text, tooltip_rect)
 
     def render_stat_menu(self):
         self.surface.fill((10, 10, 10))
@@ -678,7 +679,8 @@ class Game:
                             if self.menu_start_rect.collidepoint(mouse_pos): self.trigger_transition(settings.GameState.ARCHETYPECHOOSING.value)
                             elif self.settings_menu_rect.collidepoint(mouse_pos): self.state = settings.GameState.SETTINGSMENU.value
                             elif self.stat_menu_rect.collidepoint(mouse_pos): self.state = settings.GameState.STATMENU.value
-                            elif self.quit_rect.collidepoint(mouse_pos): self.running = False
+                            if sys.platform != "emscripten":
+                                if self.quit_rect.collidepoint(mouse_pos): self.running = False
 
                         elif self.state == settings.GameState.ARCHETYPECHOOSING.value:
                             for rect, archetype in self.archetype_menu_rects:
