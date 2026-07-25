@@ -18,14 +18,9 @@ class Game:
         pygame.display.set_caption("Swifty Cards")
         pygame.display.set_icon(settings.get_image("icon.png"))
         self.clock = pygame.time.Clock()
-        if sys.platform == "emscripten":
-            self.font = pygame.font.Font(None, 21)
-            self.title_font = pygame.font.Font(None, 32)
-            self.contestant_font = pygame.font.Font(None, 16)
-        else:
-            self.font = pygame.font.SysFont("Consolas", 21)
-            self.title_font = pygame.font.SysFont("Consolas", 32)
-            self.contestant_font = pygame.font.SysFont("Consolas", 16)
+        self.font = settings.get_font("consolas-regular.ttf", 21)
+        self.title_font = settings.get_font("consolas-bold.ttf", 32)
+        self.contestant_font = settings.get_font("consolas-regular.ttf", 16)
 
         self.spritesheets = {
             "cards": misc.Spritesheet("cards.png"),
