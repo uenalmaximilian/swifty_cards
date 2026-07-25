@@ -164,15 +164,7 @@ class Game:
                 obj.update(self.delta_time)
             self.entities = [e for e in self.entities if not e.dead]
 
-            if self.countdown <= 0.0:
-                if self.current_turn == settings.Turns.PLAYER.value:
-                    self.trigger_transition(settings.GameState.GAMEOVER.value)
-                elif self.current_turn == settings.Turns.ENEMY.value:
-                    self.score += 1
-                    self.gamesave["stat_points"] += 1
-                    self.gamesave["gold"] += random.randint(1, 3)
-                    self.setup_draft()
-                    self.trigger_transition(settings.GameState.DRAFTING.value)
+            self.current_turn = self.turn
 
             if self.player.hp < 1:
                 self.trigger_transition(settings.GameState.GAMEOVER.value)
@@ -183,7 +175,15 @@ class Game:
                 self.setup_draft()
                 self.trigger_transition(settings.GameState.DRAFTING.value)
 
-            self.current_turn = self.turn
+            if self.countdown <= 0.0:
+                if self.current_turn == settings.Turns.PLAYER.value:
+                    self.trigger_transition(settings.GameState.GAMEOVER.value)
+                elif self.current_turn == settings.Turns.ENEMY.value:
+                    self.score += 1
+                    self.gamesave["stat_points"] += 1
+                    self.gamesave["gold"] += random.randint(1, 3)
+                    self.setup_draft()
+                    self.trigger_transition(settings.GameState.DRAFTING.value)
 
     def render(self):
         if self.state == settings.GameState.MAINMENU.value: self.render_main_menu()
@@ -600,74 +600,75 @@ class Game:
                 if event.type == pygame.QUIT:
                     self.running = False
 
-                elif event.type == pygame.KEYDOWN:
-                    if self.state == settings.GameState.MAINMENU.value:
-                        if event.key == pygame.K_ESCAPE: self.running = False
+                if not self.in_transition:
+                    if event.type == pygame.KEYDOWN:
+                        if self.state == settings.GameState.MAINMENU.value:
+                            if event.key == pygame.K_ESCAPE: self.running = False
 
-                    elif self.state == settings.GameState.PLAYING.value:
-                        if event.key == pygame.K_ESCAPE: self.state = settings.GameState.PAUSED.value
+                        elif self.state == settings.GameState.PLAYING.value:
+                            if event.key == pygame.K_ESCAPE: self.state = settings.GameState.PAUSED.value
 
-                    elif self.state == settings.GameState.PAUSED.value:
-                        if event.key == pygame.K_ESCAPE: self.state = settings.GameState.PLAYING.value
+                        elif self.state == settings.GameState.PAUSED.value:
+                            if event.key == pygame.K_ESCAPE: self.state = settings.GameState.PLAYING.value
 
-                    elif self.state == settings.GameState.ARCHETYPECHOOSING.value:
-                        if event.key == pygame.K_ESCAPE: self.trigger_transition(settings.GameState.MAINMENU.value, 1)
+                        elif self.state == settings.GameState.ARCHETYPECHOOSING.value:
+                            if event.key == pygame.K_ESCAPE: self.trigger_transition(settings.GameState.MAINMENU.value, 1)
 
-                    elif self.state == settings.GameState.SETTINGSMENU.value:
-                        if event.key == pygame.K_ESCAPE: self.state = settings.GameState.MAINMENU.value
+                        elif self.state == settings.GameState.SETTINGSMENU.value:
+                            if event.key == pygame.K_ESCAPE: self.state = settings.GameState.MAINMENU.value
 
-                    elif self.state == settings.GameState.STATMENU.value:
-                        if event.key == pygame.K_ESCAPE: self.state = settings.GameState.MAINMENU.value
+                        elif self.state == settings.GameState.STATMENU.value:
+                            if event.key == pygame.K_ESCAPE: self.state = settings.GameState.MAINMENU.value
 
-                elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
-                    mouse_pos = event.pos
+                    elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+                        mouse_pos = event.pos
 
-                    if self.state == settings.GameState.DRAFTING.value:                        
-                        for rect, card in self.draft_rects:
-                            if rect.collidepoint(mouse_pos):
-                                self.player.deck.append(card)
+                        if self.state == settings.GameState.DRAFTING.value:                        
+                            for rect, card in self.draft_rects:
+                                if rect.collidepoint(mouse_pos):
+                                    self.player.deck.append(card)
+                                    self.new_match()
+                                    break
+
+                            if self.draft_skip_rect.collidepoint(mouse_pos):
                                 self.new_match()
-                                break
 
-                        if self.draft_skip_rect.collidepoint(mouse_pos):
-                            self.new_match()
+                        elif self.state == settings.GameState.MAINMENU.value:
+                            if self.menu_start_rect.collidepoint(mouse_pos): self.trigger_transition(settings.GameState.ARCHETYPECHOOSING.value, 1)
+                            elif self.settings_menu_rect.collidepoint(mouse_pos): self.state = settings.GameState.SETTINGSMENU.value
+                            elif self.stat_menu_rect.collidepoint(mouse_pos): self.state = settings.GameState.STATMENU.value
+                            elif self.quit_rect.collidepoint(mouse_pos): self.running = False
 
-                    elif self.state == settings.GameState.MAINMENU.value:
-                        if self.menu_start_rect.collidepoint(mouse_pos): self.trigger_transition(settings.GameState.ARCHETYPECHOOSING.value, 1)
-                        elif self.settings_menu_rect.collidepoint(mouse_pos): self.state = settings.GameState.SETTINGSMENU.value
-                        elif self.stat_menu_rect.collidepoint(mouse_pos): self.state = settings.GameState.STATMENU.value
-                        elif self.quit_rect.collidepoint(mouse_pos): self.running = False
+                        elif self.state == settings.GameState.ARCHETYPECHOOSING.value:
+                            for rect, archetype in self.archetype_menu_rects:
+                                if rect.collidepoint(mouse_pos):
+                                    self.new_game(archetype)
 
-                    elif self.state == settings.GameState.ARCHETYPECHOOSING.value:
-                        for rect, archetype in self.archetype_menu_rects:
-                            if rect.collidepoint(mouse_pos):
-                                self.new_game(archetype)
+                        elif self.state == settings.GameState.GAMEOVER.value:
+                            if self.game_over_button_rect.collidepoint(mouse_pos): self.trigger_transition(settings.GameState.MAINMENU.value, 1)
 
-                    elif self.state == settings.GameState.GAMEOVER.value:
-                        if self.game_over_button_rect.collidepoint(mouse_pos): self.trigger_transition(settings.GameState.MAINMENU.value, 1)
+                        elif self.state == settings.GameState.PAUSED.value:
+                            if self.pause_button_rect.collidepoint(mouse_pos): self.state = settings.GameState.PLAYING.value
+                            elif self.pause_menu_button_rect.collidepoint(mouse_pos): self.trigger_transition(settings.GameState.MAINMENU.value, 1)
 
-                    elif self.state == settings.GameState.PAUSED.value:
-                        if self.pause_button_rect.collidepoint(mouse_pos): self.state = settings.GameState.PLAYING.value
-                        elif self.pause_menu_button_rect.collidepoint(mouse_pos): self.trigger_transition(settings.GameState.MAINMENU.value, 1)
+                        elif self.state == settings.GameState.SETTINGSMENU.value:
+                            if self.back_rect.collidepoint(mouse_pos): self.state = settings.GameState.MAINMENU.value
+                            elif self.fullscreen_rect.collidepoint(mouse_pos): self.toggle_fullscreen()
+                            elif self.wipe_data_rect.collidepoint(mouse_pos): self.gamesave = settings.EMPTY_SAVE
 
-                    elif self.state == settings.GameState.SETTINGSMENU.value:
-                        if self.back_rect.collidepoint(mouse_pos): self.state = settings.GameState.MAINMENU.value
-                        elif self.fullscreen_rect.collidepoint(mouse_pos): self.toggle_fullscreen()
-                        elif self.wipe_data_rect.collidepoint(mouse_pos): self.gamesave = settings.EMPTY_SAVE
+                        elif self.state == settings.GameState.STATMENU.value:
+                            if self.back_rect.collidepoint(mouse_pos): self.state = settings.GameState.MAINMENU.value
+                            elif self.stat_hp_rect.collidepoint(mouse_pos):
+                                if self.gamesave["stat_points"] > 0:
+                                    self.gamesave["stat_points"] -= 1
+                                    self.gamesave["hp_stat"] += 1
+                            elif self.stat_shield_rect.collidepoint(mouse_pos):
+                                if self.gamesave["stat_points"] > 0:
+                                    self.gamesave["stat_points"] -= 1
+                                    self.gamesave["shield_stat"] += 1
 
-                    elif self.state == settings.GameState.STATMENU.value:
-                        if self.back_rect.collidepoint(mouse_pos): self.state = settings.GameState.MAINMENU.value
-                        elif self.stat_hp_rect.collidepoint(mouse_pos):
-                            if self.gamesave["stat_points"] > 0:
-                                self.gamesave["stat_points"] -= 1
-                                self.gamesave["hp_stat"] += 1
-                        elif self.stat_shield_rect.collidepoint(mouse_pos):
-                            if self.gamesave["stat_points"] > 0:
-                                self.gamesave["stat_points"] -= 1
-                                self.gamesave["shield_stat"] += 1
-
-                if self.state == settings.GameState.PLAYING.value:
-                    for obj in self.entities[:]: obj.handle_event(event, self)
+                    if self.state == settings.GameState.PLAYING.value:
+                        for obj in self.entities[:]: obj.handle_event(event, self)
 
             self.update()
             self.render()
