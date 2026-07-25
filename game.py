@@ -57,6 +57,7 @@ class Game:
         self.stat_shield_rect: pygame.Rect = None
         self.quit_rect: pygame.Rect = None
         self.wipe_data_rect: pygame.Rect = None
+        self.pause_rect: pygame.Rect = None
 
         self.in_transition = False
         self.transition_timer = 0.0
@@ -85,9 +86,9 @@ class Game:
             if self.is_fullscreen: self.screen = pygame.display.set_mode((settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT), pygame.SCALED | pygame.FULLSCREEN)
             else: self.screen = pygame.display.set_mode((settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT), pygame.SCALED)
 
-    def trigger_transition(self, next_state, freeze_time=1.5):
+    def trigger_transition(self, next_state):
         self.in_transition = True
-        self.transition_timer = freeze_time
+        self.transition_timer = 0.15
         self.transition_step = settings.TransitionStep.FREEZE.value
         self.next_state = next_state
         self.fade_alpha = 0.0
@@ -107,7 +108,7 @@ class Game:
         self.new_match()
 
     def new_match(self):
-        self.trigger_transition(settings.GameState.PLAYING.value, 1)
+        self.trigger_transition(settings.GameState.PLAYING.value)
         self.countdown = 30.0
         self.last_card_id = None
         self.entities.clear()
@@ -386,6 +387,13 @@ class Game:
         title = self.title_font.render("Archetypes", False, (230, 230, 230))
         self.surface.blit(title, title.get_rect(center=(settings.SCREEN_WIDTH // 2, 50)))
 
+        btn_w, btn_h = 32 * 2, 12 * 2
+        self.back_rect = pygame.Rect(5, 5, btn_w, btn_h)
+        if settings.DEBUG_MODE: pygame.draw.rect(self.surface, settings.DEBUG_COLORS.COLOR_5.value, self.back_rect, width=0)
+        back_button_image = self.spritesheets["buttons"].get_image(224, 0, 32, 12)
+        scaled_image = pygame.transform.scale(back_button_image, (btn_w, btn_h))
+        self.surface.blit(scaled_image, self.back_rect)
+
         archetypes_list = list(settings.Archetype)
         btn_w, btn_h = 48, 64
         spacing = 30
@@ -437,6 +445,14 @@ class Game:
         countdown_rect = countdown_text.get_rect()
         countdown_rect.center = (settings.SCREEN_WIDTH // 2, settings.SCREEN_HEIGHT - (settings.SCREEN_HEIGHT - 16))
         self.surface.blit(countdown_text, countdown_rect)
+
+        btn_w, btn_h = 40 * 1.5, 13 * 1.5
+        self.pause_rect = pygame.Rect(0, 0, btn_w, btn_h)
+        self.pause_rect.bottomleft = (5, settings.SCREEN_HEIGHT - 5)
+        if settings.DEBUG_MODE: pygame.draw.rect(self.surface, settings.DEBUG_COLORS.COLOR_5.value, self.pause_rect, width=0)
+        pause_button_image = self.spritesheets["misc"].get_image(0, 26, 40, 13)
+        scaled_image = pygame.transform.scale(pause_button_image, (btn_w, btn_h))
+        self.surface.blit(scaled_image, self.pause_rect)
 
         player_image_rect = pygame.Rect(3, 3, 32, 32)
         if settings.DEBUG_MODE: pygame.draw.rect(self.surface, settings.DEBUG_COLORS.COLOR_2.value, player_image_rect, width=0)
@@ -637,7 +653,7 @@ class Game:
                             if event.key == pygame.K_ESCAPE: self.state = settings.GameState.PLAYING.value
 
                         elif self.state == settings.GameState.ARCHETYPECHOOSING.value:
-                            if event.key == pygame.K_ESCAPE: self.trigger_transition(settings.GameState.MAINMENU.value, 1)
+                            if event.key == pygame.K_ESCAPE: self.trigger_transition(settings.GameState.MAINMENU.value)
 
                         elif self.state == settings.GameState.SETTINGSMENU.value:
                             if event.key == pygame.K_ESCAPE: self.state = settings.GameState.MAINMENU.value
@@ -659,7 +675,7 @@ class Game:
                                 self.new_match()
 
                         elif self.state == settings.GameState.MAINMENU.value:
-                            if self.menu_start_rect.collidepoint(mouse_pos): self.trigger_transition(settings.GameState.ARCHETYPECHOOSING.value, 1)
+                            if self.menu_start_rect.collidepoint(mouse_pos): self.trigger_transition(settings.GameState.ARCHETYPECHOOSING.value)
                             elif self.settings_menu_rect.collidepoint(mouse_pos): self.state = settings.GameState.SETTINGSMENU.value
                             elif self.stat_menu_rect.collidepoint(mouse_pos): self.state = settings.GameState.STATMENU.value
                             elif self.quit_rect.collidepoint(mouse_pos): self.running = False
@@ -668,15 +684,16 @@ class Game:
                             for rect, archetype in self.archetype_menu_rects:
                                 if rect.collidepoint(mouse_pos):
                                     self.new_game(archetype)
+                            if self.back_rect.collidepoint(mouse_pos): self.trigger_transition(settings.GameState.MAINMENU.value)
 
                         elif self.state == settings.GameState.GAMEOVER.value:
-                            if self.game_over_button_rect.collidepoint(mouse_pos): self.trigger_transition(settings.GameState.MAINMENU.value, 1)
+                            if self.game_over_button_rect.collidepoint(mouse_pos): self.trigger_transition(settings.GameState.MAINMENU.value)
 
                         elif self.state == settings.GameState.PAUSED.value:
                             if self.pause_button_rect.collidepoint(mouse_pos): self.state = settings.GameState.PLAYING.value
                             elif self.pause_menu_button_rect.collidepoint(mouse_pos):
                                 if self.score > self.gamesave["highscore"]: self.gamesave["highscore"] = self.score
-                                self.trigger_transition(settings.GameState.MAINMENU.value, 1)
+                                self.trigger_transition(settings.GameState.MAINMENU.value)
 
                         elif self.state == settings.GameState.SETTINGSMENU.value:
                             if self.back_rect.collidepoint(mouse_pos): self.state = settings.GameState.MAINMENU.value
@@ -693,6 +710,9 @@ class Game:
                                 if self.gamesave["stat_points"] > 0:
                                     self.gamesave["stat_points"] -= 1
                                     self.gamesave["shield_stat"] += 1
+
+                        elif self.state == settings.GameState.PLAYING.value:
+                            if self.pause_rect.collidepoint(mouse_pos): self.state = settings.GameState.PAUSED.value
 
                     if self.state == settings.GameState.PLAYING.value:
                         for obj in self.entities[:]: obj.handle_event(event, self)
