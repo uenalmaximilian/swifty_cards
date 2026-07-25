@@ -4,7 +4,9 @@ import pygame
 from enum import Enum
 import sys
 import json
-from cryptography.fernet import Fernet
+import hmac
+import hashlib
+import platform
 from pathlib import Path
 from platformdirs import user_data_dir
 
@@ -25,7 +27,6 @@ SCREEN_HEIGHT = 270
 DEBUG_MODE = 0
 SPRITESHEET_FILTER_COLOR = "#007F00"
 MAX_CARD_ID = 15
-KEY = b"v4YVv0PdJehS6eypHJ1PXPvvOTJtdlkdRcJzZUl6vEg="
 
 class Directories(Enum):
     ASSETS = "assets"
@@ -169,6 +170,10 @@ def get_sound(name: str):
     asset_path = os.path.join(base_path, Directories.ASSETS.value, Directories.SOUNDS.value, name)
     return pygame.mixer.Sound(asset_path)
 
+def get_device_key():
+    system_id = f"{platform.node()}-{os.getlogin()}-SwiftyCards"
+    return hashlib.sha256(system_id.encode("utf-8")).digest()
+
 def ensure_directory():
     SAVE_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -177,20 +182,38 @@ def load_game():
         return EMPTY_SAVE
 
     try:
-        with open(SAVE_FILE_PATH, "rb") as f:
-            encrypted = f.read()
-        decrypted = Fernet(KEY).decrypt(encrypted)
-        data = EMPTY_SAVE
-        data.update(json.loads(decrypted.decode("utf-8")))
-        return data
+        with open(SAVE_FILE_PATH, "r", encoding="utf-8") as f:
+            save_package = json.load(f)
+
+        data = save_package.get("data", {})
+        saved_signature = save_package.get("signature", "")
+        payload_bytes = json.dumps(data, sort_keys=True).encode("utf-8")
+        secret_key = get_device_key()
+        expected_signature = hmac.new(secret_key, payload_bytes, hashlib.sha256).hexdigest()
+
+        if hmac.compare_digest(saved_signature, expected_signature):
+            full_save = EMPTY_SAVE.copy()
+            full_save.update(data)
+            return full_save
+        else:
+            return EMPTY_SAVE
+
     except Exception:
         return EMPTY_SAVE
 
 def save_game(data: dict):
     try:
         ensure_directory()
-        bytedata = json.dumps(data).encode("utf-8")
-        encrypted = Fernet(KEY).encrypt(bytedata)
-        with open(SAVE_FILE_PATH, "wb") as f:
-            f.write(encrypted)
+        payload_bytes = json.dumps(data, sort_keys=True).encode("utf-8")
+        secret_key = get_device_key()
+        signature = hmac.new(secret_key, payload_bytes, hashlib.sha256).hexdigest()
+
+        save_package = {
+            "data": data,
+            "signature": signature
+        }
+
+        with open(SAVE_FILE_PATH, "w", encoding="utf-8") as f:
+            json.dump(save_package, f, indent=2)
+
     except Exception: pass
