@@ -660,10 +660,11 @@ class Game:
                 if event.type == pygame.QUIT:
                     self.running = False
 
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_F11: self.toggle_fullscreen()
+
                 if not self.in_transition:
                     if event.type == pygame.KEYDOWN:
-                        if event.key == pygame.K_F11: self.toggle_fullscreen()
-
                         if self.state == settings.GameState.MAINMENU.value:
                             if event.key == pygame.K_ESCAPE: self.running = False
 

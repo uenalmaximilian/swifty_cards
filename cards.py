@@ -132,15 +132,22 @@ class Player(misc.Contestant):
             total_width = len(self.hand) * self.hand[0].size[0] + (len(self.hand) - 1) * card_gap
             start_x = (settings.SCREEN_WIDTH - total_width) // 2
 
+            hovered_card = None
+            mouse_pos = pygame.mouse.get_pos()
+
+            if self.game.current_turn == settings.Turns.PLAYER.value:
+                for card in reversed(self.hand):
+                    if card.rect.collidepoint(mouse_pos) or card.menu_rect.collidepoint(mouse_pos):
+                        hovered_card = card
+                        break
+
             for i, card in enumerate(self.hand):
+                card.is_hovered = (card == hovered_card)
                 base_y = settings.SCREEN_HEIGHT - card.size[1] - 10
                 hover_offset = 15 if card.is_hovered else 0
-
                 target_x = start_x + i * (card.size[0] + card_gap)
                 target_y = base_y - hover_offset
                 card.target_pos = pygame.Vector2(target_x, target_y)
-
-                if self.game.current_turn == settings.Turns.PLAYER.value: card.check_hover()
                 card.update(dt)
 
     def handle_event(self, event, game):
