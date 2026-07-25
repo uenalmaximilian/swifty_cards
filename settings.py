@@ -16,7 +16,8 @@ EMPTY_SAVE = {
                 "gold": 0,
                 "stat_points": 0,
                 "hp_stat": 0,
-                "shield_stat": 0
+                "shield_stat": 0,
+                "highscore": 0
             }
 
 SCREEN_WIDTH = 480
@@ -179,7 +180,8 @@ def load_game():
         with open(SAVE_FILE_PATH, "rb") as f:
             encrypted = f.read()
         decrypted = Fernet(KEY).decrypt(encrypted)
-        data = json.loads(decrypted.decode("utf-8"))
+        data = EMPTY_SAVE
+        data.update(json.loads(decrypted.decode("utf-8")))
         return data
     except Exception:
         return EMPTY_SAVE

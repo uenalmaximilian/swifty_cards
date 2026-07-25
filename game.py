@@ -167,6 +167,7 @@ class Game:
             self.current_turn = self.turn
 
             if self.player.hp < 1:
+                if self.score > self.gamesave["highscore"]: self.gamesave["highscore"] = self.score
                 self.trigger_transition(settings.GameState.GAMEOVER.value)
             if self.opponent.hp < 1:
                 self.score += 1
@@ -177,6 +178,7 @@ class Game:
 
             if self.countdown <= 0.0:
                 if self.current_turn == settings.Turns.PLAYER.value:
+                    if self.score > self.gamesave["highscore"]: self.gamesave["highscore"] = self.score
                     self.trigger_transition(settings.GameState.GAMEOVER.value)
                 elif self.current_turn == settings.Turns.ENEMY.value:
                     self.score += 1
@@ -210,6 +212,9 @@ class Game:
 
         self.surface.fill((10, 10, 10))
         self.surface.blit(title, title.get_rect(center=(settings.SCREEN_WIDTH // 2, base_y_title + y_offset)))
+
+        highscore_text = self.font.render(f"High Score: {self.gamesave["highscore"]}", False, (230, 230, 230))
+        self.surface.blit(highscore_text, highscore_text.get_rect(bottomleft=(5, settings.SCREEN_HEIGHT)))
 
         btn_w, btn_h = 96, 36
         btn_x = settings.SCREEN_WIDTH // 2
@@ -343,7 +348,7 @@ class Game:
 
         mouse_pos = pygame.mouse.get_pos()
         if self.wipe_data_rect.collidepoint(mouse_pos):
-            tooltip_text = self.contestant_font.render("ACTIONS WILL TAKE PLACE INSTANTLY!\nONLY CLICK IF YOU ARE SURE!", False, (230, 230, 230))
+            tooltip_text = self.contestant_font.render("THIS WILL WIPE YOUR ONE AND\nONLY GAME SAVE INSTANTLY!\nONLY CLICK IF YOU ARE SURE!", False, (230, 230, 230))
             tooltip_text_rect = tooltip_text.get_rect()
             tooltip_rect = pygame.Rect(0, 0, tooltip_text_rect.width, tooltip_text_rect.height)
             tooltip_rect.bottomleft = mouse_pos
@@ -397,7 +402,7 @@ class Game:
             self.surface.blit(tooltip_text, tooltip_rect)
 
     def render_gameplay(self):
-        self.surface.fill((0, 0, 0))
+        self.surface.fill((10, 10, 10))
 
         for obj in self.entities:
             obj.render(self.surface, self.spritesheets)
@@ -582,13 +587,9 @@ class Game:
         chosen_card_ids = []
 
         for pool in selected_pools:
-            if random.random() < 0.000001:
-                card_id = random.choice(settings.CardPools.SECRET.value)
-            else:
-                card_id = random.choice(pool)
-
-            while card_id in chosen_card_ids:
-                card_id = random.choice(pool)
+            if random.random() < 0.000001: card_id = random.choice(settings.CardPools.SECRET.value)
+            else: card_id = random.choice(pool)
+            while card_id in chosen_card_ids: card_id = random.choice(pool)
 
             chosen_card_ids.append(card_id)
             self.draft_options.append(cards.Card(None, card_id, self))
@@ -602,6 +603,8 @@ class Game:
 
                 if not self.in_transition:
                     if event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_F11: self.toggle_fullscreen()
+
                         if self.state == settings.GameState.MAINMENU.value:
                             if event.key == pygame.K_ESCAPE: self.running = False
 
@@ -649,7 +652,9 @@ class Game:
 
                         elif self.state == settings.GameState.PAUSED.value:
                             if self.pause_button_rect.collidepoint(mouse_pos): self.state = settings.GameState.PLAYING.value
-                            elif self.pause_menu_button_rect.collidepoint(mouse_pos): self.trigger_transition(settings.GameState.MAINMENU.value, 1)
+                            elif self.pause_menu_button_rect.collidepoint(mouse_pos):
+                                if self.score > self.gamesave["highscore"]: self.gamesave["highscore"] = self.score
+                                self.trigger_transition(settings.GameState.MAINMENU.value, 1)
 
                         elif self.state == settings.GameState.SETTINGSMENU.value:
                             if self.back_rect.collidepoint(mouse_pos): self.state = settings.GameState.MAINMENU.value
