@@ -8,11 +8,13 @@ import hmac
 import hashlib
 import platform
 from pathlib import Path
-from platformdirs import user_data_dir
+if sys.platform != "emscripten":
+    from platformdirs import user_data_dir
 
 GAME_NAME = "SwiftyCards"
 DEV_NAME = "Apteryx"
-SAVE_DIR = Path(user_data_dir(GAME_NAME, DEV_NAME))
+if sys.platform == "emscripten": SAVE_DIR = Path(".")
+else: SAVE_DIR = Path(user_data_dir(GAME_NAME, DEV_NAME))
 SAVE_FILE_PATH = SAVE_DIR / "savegame.dat"
 EMPTY_SAVE = {
                 "gold": 0,
@@ -159,19 +161,19 @@ class DeckStrings(Enum):
     UTILITY = "2x +3 Countdown\n2x -3 Countdown\n1x +3 HP\n1x +1 Shield\n1x -2 DMG"
 
 def get_image(name: str):
-    if hasattr(sys, "_MEIPASS"): base_path = sys._MEIPASS
-    else: base_path = os.path.abspath(".")
-    asset_path = os.path.join(base_path, Directories.ASSETS.value, Directories.IMAGES.value, name)
+    asset_path = os.path.join(Directories.ASSETS.value, Directories.IMAGES.value, name)
     return pygame.image.load(asset_path).convert_alpha()
 
 def get_sound(name: str):
-    if hasattr(sys, "_MEIPASS"): base_path = sys._MEIPASS
-    else: base_path = os.path.abspath(".")
-    asset_path = os.path.join(base_path, Directories.ASSETS.value, Directories.SOUNDS.value, name)
+    asset_path = os.path.join(Directories.ASSETS.value, Directories.SOUNDS.value, name)
     return pygame.mixer.Sound(asset_path)
 
 def get_device_key():
-    system_id = f"{platform.node()}-{os.getlogin()}-SwiftyCards"
+    try:
+        user = os.getlogin()
+    except Exception:
+        user = "web"
+    system_id = f"{platform.node()}-{user}-SwiftyCards"
     return hashlib.sha256(system_id.encode("utf-8")).digest()
 
 def ensure_directory():

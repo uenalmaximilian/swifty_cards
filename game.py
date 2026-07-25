@@ -5,17 +5,27 @@ import cards
 import random
 import math
 import sys
+import asyncio
 
 class Game:
     def __init__(self, entities: list[misc.Entity] = None):
-        self.screen = pygame.display.set_mode((settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT), pygame.SCALED)
+        if sys.platform == "emscripten":
+            self.screen = pygame.display.set_mode((settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT))
+            import platform
+            platform.window.eval('document.getElementById("canvas").style.imageRendering = "pixelated";')
+        else: self.screen = pygame.display.set_mode((settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT), pygame.SCALED)
         self.surface = pygame.Surface((settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT))
         pygame.display.set_caption("Swifty Cards")
         pygame.display.set_icon(settings.get_image("icon.png"))
         self.clock = pygame.time.Clock()
-        self.font = pygame.font.SysFont("Consolas", 21)
-        self.title_font = pygame.font.SysFont("Consolas", 32, bold=True)
-        self.contestant_font = pygame.font.SysFont("Consolas", 16)
+        if sys.platform == "emscripten":
+            self.font = pygame.font.Font(None, 21)
+            self.title_font = pygame.font.Font(None, 32)
+            self.contestant_font = pygame.font.Font(None, 16)
+        else:
+            self.font = pygame.font.SysFont("Consolas", 21)
+            self.title_font = pygame.font.SysFont("Consolas", 32)
+            self.contestant_font = pygame.font.SysFont("Consolas", 16)
 
         self.spritesheets = {
             "cards": misc.Spritesheet("cards.png"),
@@ -59,9 +69,21 @@ class Game:
         self.gamesave = settings.load_game()
 
     def toggle_fullscreen(self):
-        self.is_fullscreen = not self.is_fullscreen
-        if self.is_fullscreen: self.screen = pygame.display.set_mode((settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT), pygame.SCALED | pygame.FULLSCREEN)
-        else: self.screen = pygame.display.set_mode((settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT), pygame.SCALED)
+        if sys.platform == "emscripten":
+            import platform
+            platform.window.eval('''
+                var canvas = document.getElementById("canvas");
+                if (!document.fullscreenElement) {
+                    if (canvas.requestFullscreen) { canvas.requestFullscreen(); }
+                    else if (canvas.webkitRequestFullscreen) { canvas.webkitRequestFullscreen(); }
+                } else {
+                    if (document.exitFullscreen) { document.exitFullscreen(); }
+                }
+            ''')
+        else:
+            self.is_fullscreen = not self.is_fullscreen
+            if self.is_fullscreen: self.screen = pygame.display.set_mode((settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT), pygame.SCALED | pygame.FULLSCREEN)
+            else: self.screen = pygame.display.set_mode((settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT), pygame.SCALED)
 
     def trigger_transition(self, next_state, freeze_time=1.5):
         self.in_transition = True
@@ -594,7 +616,7 @@ class Game:
             chosen_card_ids.append(card_id)
             self.draft_options.append(cards.Card(None, card_id, self))
 
-    def run(self):
+    async def run(self):
         self.running = True
         while self.running:
             for event in pygame.event.get():
@@ -683,6 +705,7 @@ class Game:
 
             self.delta_time = self.clock.tick(60) / 1000
 
+            await asyncio.sleep(0)
+
         settings.save_game(self.gamesave)
         pygame.quit()
-        sys.exit(0)
