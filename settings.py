@@ -29,6 +29,10 @@ SCREEN_HEIGHT = 270
 DEBUG_MODE = 0
 SPRITESHEET_FILTER_COLOR = "#007F00"
 MAX_CARD_ID = 15
+ENEMY_START_ID = 10
+MAX_ENEMY_ID = 19
+SECRET_ENEMY_ID_START = 90
+MAX_SECRET_ENEMY_ID = 90
 
 class Directories(Enum):
     ASSETS = "assets"
@@ -182,11 +186,12 @@ def get_device_key():
         user = os.getlogin()
     except Exception:
         user = "web"
-    system_id = f"{platform.node()}-{user}-SwiftyCards"
+    node = getattr(platform, "node", lambda: "webassembly")()
+    system_id = f"{node}-{user}-SwiftyCards"
     return hashlib.sha256(system_id.encode("utf-8")).digest()
 
 def ensure_directory():
-    SAVE_DIR.mkdir(parents=True, exist_ok=True)
+    if sys.platform != "emscripten": SAVE_DIR.mkdir(parents=True, exist_ok=True)
 
 def load_game():
     if not SAVE_FILE_PATH.exists():

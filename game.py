@@ -140,6 +140,8 @@ class Game:
         self.opponent.hand.clear()
         self.opponent.pile = self.opponent.deck.copy()
         self.opponent.draw_cards()
+        if random.random() < 0.05: self.opponent.id = random.randint(settings.SECRET_ENEMY_ID_START, settings.MAX_SECRET_ENEMY_ID)
+        else: self.opponent.id = random.randint(settings.ENEMY_START_ID, settings.MAX_ENEMY_ID)
 
         self.current_turn: int = settings.Turns.PLAYER.value
         self.turn: int = self.current_turn
@@ -376,23 +378,24 @@ class Game:
         scaled_image = pygame.transform.scale(fullscreen_button_image, (btn_w, btn_h))
         self.surface.blit(scaled_image, self.fullscreen_rect)
 
-        btn_w, btn_h = 32 * 2, 12 * 2
-        self.wipe_data_rect = pygame.Rect(0, 0, btn_w, btn_h)
-        self.wipe_data_rect.center = (settings.SCREEN_WIDTH // 2, settings.SCREEN_HEIGHT - 20)
-        if settings.DEBUG_MODE: pygame.draw.rect(self.surface, settings.DEBUG_COLORS.COLOR_5.value, self.wipe_data_rect, width=0)
-        wipe_button_image = self.spritesheets["buttons"].get_image(0, 12, 32, 12)
-        scaled_image = pygame.transform.scale(wipe_button_image, (btn_w, btn_h))
-        self.surface.blit(scaled_image, self.wipe_data_rect)
+        if sys.platform != "emscripten":
+            btn_w, btn_h = 32 * 2, 12 * 2
+            self.wipe_data_rect = pygame.Rect(0, 0, btn_w, btn_h)
+            self.wipe_data_rect.center = (settings.SCREEN_WIDTH // 2, settings.SCREEN_HEIGHT - 20)
+            if settings.DEBUG_MODE: pygame.draw.rect(self.surface, settings.DEBUG_COLORS.COLOR_5.value, self.wipe_data_rect, width=0)
+            wipe_button_image = self.spritesheets["buttons"].get_image(0, 12, 32, 12)
+            scaled_image = pygame.transform.scale(wipe_button_image, (btn_w, btn_h))
+            self.surface.blit(scaled_image, self.wipe_data_rect)
 
-        mouse_pos = pygame.mouse.get_pos()
-        if self.wipe_data_rect.collidepoint(mouse_pos):
-            tooltip_text = self.contestant_font.render("THIS WILL WIPE YOUR ONE AND\nONLY GAME SAVE INSTANTLY!\nONLY CLICK IF YOU ARE SURE!", False, (230, 230, 230))
-            tooltip_text_rect = tooltip_text.get_rect()
-            tooltip_rect = pygame.Rect(0, 0, tooltip_text_rect.width, tooltip_text_rect.height)
-            tooltip_rect.bottomleft = mouse_pos
-            tooltip_rect.centerx = mouse_pos[0]
-            pygame.draw.rect(self.surface, (20, 20, 20), tooltip_rect, width=0)
-            self.surface.blit(tooltip_text, tooltip_rect)
+            mouse_pos = pygame.mouse.get_pos()
+            if self.wipe_data_rect.collidepoint(mouse_pos):
+                tooltip_text = self.contestant_font.render("THIS WILL WIPE YOUR ONE AND\nONLY GAME SAVE INSTANTLY!\nONLY CLICK IF YOU ARE SURE!", False, (230, 230, 230))
+                tooltip_text_rect = tooltip_text.get_rect()
+                tooltip_rect = pygame.Rect(0, 0, tooltip_text_rect.width, tooltip_text_rect.height)
+                tooltip_rect.bottomleft = mouse_pos
+                tooltip_rect.centerx = mouse_pos[0]
+                pygame.draw.rect(self.surface, (20, 20, 20), tooltip_rect, width=0)
+                self.surface.blit(tooltip_text, tooltip_rect)
 
     def render_archetype_menu(self):
         self.surface.fill((10, 10, 25))
@@ -477,10 +480,14 @@ class Game:
 
         player_image_rect = pygame.Rect(3, 3, 32, 32)
         if settings.DEBUG_MODE: pygame.draw.rect(self.surface, settings.DEBUG_COLORS.COLOR_2.value, player_image_rect, width=0)
-        player_image = self.spritesheets["pictures"].get_image(0, 0, 32, 32)
-        self.surface.blit(player_image, player_image_rect)
+        player_image = self.spritesheets["pictures"].get_image(0, 0, 16, 16)
+        scaled_image = pygame.transform.scale(player_image, (32, 32))
+        self.surface.blit(scaled_image, player_image_rect)
         enemy_image_rect = pygame.Rect(settings.SCREEN_WIDTH - 35, 3, 32, 32)
         if settings.DEBUG_MODE: pygame.draw.rect(self.surface, settings.DEBUG_COLORS.COLOR_1.value, enemy_image_rect, width=0)
+        enemy_image = self.spritesheets["pictures"].get_image(self.opponent.id % 10 * 16, self.opponent.id // 10 * 16, 16, 16)
+        scaled_image = pygame.transform.scale(enemy_image, (32, 32))
+        self.surface.blit(scaled_image, enemy_image_rect)
 
         player_max_hp_rect = pygame.Rect(3, player_image_rect.height + 6, (self.player.max_hp / self.player.max_hp) * 100, 14)
         pygame.draw.rect(self.surface, "#007F00", player_max_hp_rect, width=0, border_radius=3)
@@ -721,7 +728,8 @@ class Game:
                         elif self.state == settings.GameState.SETTINGSMENU.value:
                             if self.back_rect.collidepoint(mouse_pos): self.state = settings.GameState.MAINMENU.value
                             elif self.fullscreen_rect.collidepoint(mouse_pos): self.toggle_fullscreen()
-                            elif self.wipe_data_rect.collidepoint(mouse_pos): self.gamesave = settings.EMPTY_SAVE
+                            if sys.platform != "emscripten":
+                                if self.wipe_data_rect.collidepoint(mouse_pos): self.gamesave = settings.EMPTY_SAVE
 
                         elif self.state == settings.GameState.STATMENU.value:
                             if self.back_rect.collidepoint(mouse_pos): self.state = settings.GameState.MAINMENU.value

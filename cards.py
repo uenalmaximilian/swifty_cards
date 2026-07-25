@@ -172,6 +172,7 @@ class Enemy(misc.Contestant):
         self.hand: list[Card] = []
         self.max_hand_size = hand_size
         self.game = game if game is not None else None
+        self.id = 0
 
         self.model: ai.Model = ai.AI_REGISTRY.get(enemy_id, ai.Normal())
         self.timer = 0.0
