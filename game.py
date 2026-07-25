@@ -40,6 +40,8 @@ class Game:
         self.running = False
         self.state = settings.GameState.MAINMENU.value
         self.score = 0
+        self.last_action: settings.Actions = None
+        self.active_vfx: list[misc.VFXText] = []
 
         self.draft_rects: list[pygame.Rect] = []
         self.draft_options: list[cards.Card] = []
@@ -108,10 +110,11 @@ class Game:
         self.new_match()
 
     def new_match(self):
-        self.trigger_transition(settings.GameState.PLAYING.value)
+        self.active_vfx.clear()
         self.countdown = 30.0
-        self.last_card_id = None
+        self.last_card_id = 0
         self.entities.clear()
+        self.trigger_transition(settings.GameState.PLAYING.value)
 
         self.player.hp = self.player.max_hp
         self.player.shield = self.player.max_shield
@@ -187,7 +190,23 @@ class Game:
                 obj.update(self.delta_time)
             self.entities = [e for e in self.entities if not e.dead]
 
-            self.current_turn = self.turn
+            if self.turn != self.current_turn:
+                if self.last_action.name == "DUMPED": vfx_string = f"{self.last_action.name.lower().title()}"
+                else:
+                    vfx_string = ""
+                    for attr, value in settings.CardTypes.get_by_id(self.last_card_id).items():
+                        string_dict = {"countd": "Time", "dmg": "Damage", "hp": "HP", "shield": "Shield"}
+                        if attr != "id" and value != 0:
+                            vfx_string += f"{"+" if value > 0 else ""}{value} {string_dict[attr]}\n"
+                vfx_text = self.contestant_font.render(f"{vfx_string.strip()}!", False, (200, 200, 200))
+                if self.current_turn == settings.Turns.PLAYER.value: vfx_x, vfx_y = 53, 103
+                else: vfx_x, vfx_y = 427, 103
+                self.active_vfx.append(misc.VFXText(surface=vfx_text, x=vfx_x, y=vfx_y, duration=1.0))
+                self.current_turn = self.turn
+
+            for vfx in self.active_vfx[:]:
+                vfx.update(self.delta_time)
+            self.active_vfx = [vfx for vfx in self.active_vfx if not vfx.dead]
 
             if self.player.hp < 1:
                 if self.score > self.gamesave["highscore"]: self.gamesave["highscore"] = self.score
@@ -439,13 +458,19 @@ class Game:
             obj.render(self.surface, self.spritesheets)
 
         last_card_image = self.spritesheets["cards"].get_image(self.last_card_id % 10 * 42, self.last_card_id // 10 * 64, 42, 64) if self.last_card_id is not None else None
-        if last_card_image is not None: self.surface.blit(last_card_image, (settings.SCREEN_WIDTH // 2 - 21, settings.SCREEN_HEIGHT // 2 - 52))
+        self.surface.blit(last_card_image, (settings.SCREEN_WIDTH // 2 - 21, settings.SCREEN_HEIGHT // 2 - 52))
 
         color = (255, 255, 255) if self.countdown > 5.0 else (255, 50, 50)
         countdown_text = self.font.render(f"{max(0.0, self.countdown):.2f}", False, color)
         countdown_rect = countdown_text.get_rect()
-        countdown_rect.center = (settings.SCREEN_WIDTH // 2, settings.SCREEN_HEIGHT - (settings.SCREEN_HEIGHT - 16))
+        countdown_rect.center = (settings.SCREEN_WIDTH // 2, 16)
         self.surface.blit(countdown_text, countdown_rect)
+
+        if self.player.turn_timer >= 2.0:
+            turn_timer_text = self.contestant_font.render(f"{max(0.0, 5.0 - self.player.turn_timer):.2f}", False, (255, 50, 50))
+            self.surface.blit(turn_timer_text, turn_timer_text.get_rect(center=(settings.SCREEN_WIDTH // 2, 74)))
+
+        for vfx in self.active_vfx: vfx.render(self.surface)
 
         btn_w, btn_h = 40 * 1.5, 13 * 1.5
         self.pause_rect = pygame.Rect(0, 0, btn_w, btn_h)

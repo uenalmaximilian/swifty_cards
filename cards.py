@@ -47,11 +47,13 @@ class Card(misc.Entity):
 
     def handle_event(self, event: pygame.Event, game):
         if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+            game.last_action = settings.Actions.DUMPED
             if self.play_button_rect.collidepoint(event.pos):
                 game.countdown += self.card_type["countd"]
                 game.opponent.take_dmg(self.card_type["dmg"])
                 game.player.heal(hp=self.card_type["hp"], shield=self.card_type["shield"])
                 game.last_card_id = self.card_type["id"]
+                game.last_action = settings.Actions.PLAYED
             self.dead = True
 
     def render(self, screen: pygame.Surface, spritesheets: dict[str, misc.Spritesheet], hidden: bool = False, scale: float = 1.0):
@@ -120,6 +122,7 @@ class Player(misc.Contestant):
                 if self.hand:
                     random.choice(self.hand).dead = True
                 self.game.turn = settings.Turns.ENEMY.value
+                self.game.last_action = settings.Actions.DUMPED
         else:
             self.turn_timer = 0.0
 
@@ -175,14 +178,14 @@ class Enemy(misc.Contestant):
 
     def play_card(self):
         if not self.hand: return
-
         chosen_card, action = self.model.choose_card(self.hand, self, self.game)
-
+        self.game.last_action = settings.Actions.DUMPED
         if action == "play":
             self.game.countdown += chosen_card.card_type["countd"]
             self.game.player.take_dmg(chosen_card.card_type["dmg"])
             self.heal(hp=chosen_card.card_type["hp"], shield=chosen_card.card_type["shield"])
             self.game.last_card_id = chosen_card.card_type["id"]
+            self.game.last_action = settings.Actions.PLAYED
         self.game.turn = settings.Turns.PLAYER.value
         chosen_card.dead = True
 

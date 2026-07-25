@@ -160,6 +160,10 @@ class DeckStrings(Enum):
     DEFENSIVE = "1x +3 HP\n1x +5 HP\n2x +2 Shield\n1x +3 Countdown\n1x -1 Countdown\n1x -2 DMG"
     UTILITY = "2x +3 Countdown\n2x -3 Countdown\n1x +3 HP\n1x +1 Shield\n1x -2 DMG"
 
+class Actions(Enum):
+    PLAYED = 1
+    DUMPED = 2
+
 def get_image(name: str):
     asset_path = os.path.join(Directories.ASSETS.value, Directories.IMAGES.value, name)
     return pygame.image.load(asset_path).convert_alpha()
