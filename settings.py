@@ -21,7 +21,9 @@ EMPTY_SAVE = {
                 "stat_points": 0,
                 "hp_stat": 0,
                 "shield_stat": 0,
-                "highscore": 0
+                "highscore": 0,
+                "sfx": 0.25,
+                "music": 0.25,
             }
 
 SCREEN_WIDTH = 480
@@ -33,6 +35,8 @@ ENEMY_START_ID = 10
 MAX_ENEMY_ID = 19
 SECRET_ENEMY_ID_START = 90
 MAX_SECRET_ENEMY_ID = 91
+
+sfx_volume = 0.25
 
 class Directories(Enum):
     ASSETS = "assets"
@@ -182,7 +186,9 @@ def get_image(name: str):
 def get_sound(name: str):
     relative = os.path.join(Directories.ASSETS.value, Directories.SOUNDS.value, name)
     asset_path = resource_path(relative)
-    return pygame.mixer.Sound(asset_path)
+    sound = pygame.mixer.Sound(asset_path)
+    sound.set_volume(sfx_volume * 2)
+    return sound
 
 def get_music(name: str):
     relative = os.path.join(Directories.ASSETS.value, Directories.SOUNDS.value, name)

@@ -24,8 +24,12 @@ class Normal(Model):
                 play_score += 50000.0
 
             new_countdown = countdown + c["countd"]
-            if 0.0 < new_countdown < 1.0:
+            if new_countdown < 1.0:
                 play_score += 50000.0
+            if new_countdown < 0.5:
+                play_score += 50000.0
+            if new_countdown < 0.0:
+                play_score += 100000.0
 
             enemy_hp_ratio = enemy.hp / enemy.max_hp if enemy.max_hp > 0 else 1.0
             missing_hp = enemy.max_hp - enemy.hp

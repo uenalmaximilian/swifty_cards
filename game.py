@@ -55,6 +55,8 @@ class Game:
         self.quit_rect: pygame.Rect = None
         self.wipe_data_rect: pygame.Rect = None
         self.pause_rect: pygame.Rect = None
+        self.sfx_slider_rect: pygame.Rect = None
+        self.music_slider_rect: pygame.Rect = None
 
         self.in_transition = False
         self.transition_timer = 0.0
@@ -65,9 +67,10 @@ class Game:
         self.is_fullscreen = False
 
         self.gamesave = settings.load_game()
+        settings.sfx_volume = self.gamesave["sfx"]
         settings.get_sound("start.ogg").play()
         settings.get_music("music_1.ogg")
-        pygame.mixer.music.set_volume(0.25)
+        pygame.mixer.music.set_volume(self.gamesave["music"])
         pygame.mixer.music.play(-1)
 
     def toggle_fullscreen(self):
@@ -387,6 +390,46 @@ class Game:
         scaled_image = pygame.transform.scale(fullscreen_button_image, (btn_w, btn_h))
         self.surface.blit(scaled_image, self.fullscreen_rect)
 
+        mouse_pos = pygame.mouse.get_pos()
+        mouse = pygame.mouse.get_pressed()
+
+        step_size = 0.05
+        slider_w, slider_h = 100, 24
+        slider_container_rect = pygame.Rect(0, 0, slider_w, slider_h)
+        slider_container_rect.center = (settings.SCREEN_WIDTH // 2, settings.SCREEN_HEIGHT // 2 + 40)
+        min_x = (slider_container_rect.left + 12)
+        max_x = (slider_container_rect.right - 12)
+        slider_range = max_x - min_x
+        pygame.draw.rect(self.surface, "#1D156B", slider_container_rect, width=0, border_radius=10)
+        if not self.sfx_slider_rect:
+            self.sfx_slider_rect = pygame.Rect(slider_container_rect.x, slider_container_rect.y, 24, 24)
+            self.sfx_slider_rect.centerx = min_x + (self.gamesave["sfx"] * slider_range)
+        pygame.draw.rect(self.surface, "#4B3AE2", self.sfx_slider_rect, width=0, border_radius=10)
+        pygame.draw.rect(self.surface, "#DBDBDB", self.sfx_slider_rect, width=2, border_radius=10)
+        text = self.font.render("SFX ", False, (230, 230, 230))
+        self.surface.blit(text, text.get_rect(midright=(slider_container_rect.midleft)))
+        if slider_container_rect.collidepoint(mouse_pos) and mouse[0]:
+            clamped_val = min(max(0.0, (mouse_pos[0] - min_x) / slider_range), 1.0)
+            self.gamesave["sfx"] = round(clamped_val / step_size) * step_size
+            settings.sfx_volume = self.gamesave["sfx"]
+            self.sfx_slider_rect.centerx = min_x + (self.gamesave["sfx"] * slider_range)
+
+        slider_container_rect = pygame.Rect(0, 0, slider_w, slider_h)
+        slider_container_rect.center = (settings.SCREEN_WIDTH // 2, settings.SCREEN_HEIGHT // 2 + 70)
+        pygame.draw.rect(self.surface, "#1D156B", slider_container_rect, width=0, border_radius=10)
+        if not self.music_slider_rect:
+            self.music_slider_rect = pygame.Rect(slider_container_rect.x, slider_container_rect.y, 24, 24)
+            self.music_slider_rect.centerx = min_x + (self.gamesave["music"] * slider_range)
+        pygame.draw.rect(self.surface, "#4B3AE2", self.music_slider_rect, width=0, border_radius=10)
+        pygame.draw.rect(self.surface, "#DBDBDB", self.music_slider_rect, width=2, border_radius=10)
+        text = self.font.render("Music ", False, (230, 230, 230))
+        self.surface.blit(text, text.get_rect(midright=(slider_container_rect.midleft)))
+        if slider_container_rect.collidepoint(mouse_pos) and mouse[0]:
+            clamped_val = min(max(0.0, (mouse_pos[0] - min_x) / slider_range), 1.0)
+            self.gamesave["music"] = round(clamped_val / step_size) * step_size
+            pygame.mixer.music.set_volume(self.gamesave["music"])
+            self.music_slider_rect.centerx = min_x + (self.gamesave["music"] * slider_range)
+
         if sys.platform != "emscripten":
             btn_w, btn_h = 32 * 2, 12 * 2
             self.wipe_data_rect = pygame.Rect(0, 0, btn_w, btn_h)
@@ -396,7 +439,6 @@ class Game:
             scaled_image = pygame.transform.scale(wipe_button_image, (btn_w, btn_h))
             self.surface.blit(scaled_image, self.wipe_data_rect)
 
-            mouse_pos = pygame.mouse.get_pos()
             if self.wipe_data_rect.collidepoint(mouse_pos):
                 tooltip_text = self.contestant_font.render("THIS WILL WIPE YOUR ONE AND\nONLY GAME SAVE INSTANTLY!\nONLY CLICK IF YOU ARE SURE!", False, (230, 230, 230))
                 tooltip_text_rect = tooltip_text.get_rect()
