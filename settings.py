@@ -177,6 +177,10 @@ def get_sound(name: str):
     asset_path = os.path.join(Directories.ASSETS.value, Directories.SOUNDS.value, name)
     return pygame.mixer.Sound(asset_path)
 
+def get_music(name: str):
+    asset_path = os.path.join(Directories.ASSETS.value, Directories.SOUNDS.value, name)
+    pygame.mixer.music.load(asset_path)
+
 def get_font(name: str, size: int):
     asset_path = os.path.join(Directories.ASSETS.value, Directories.FONTS.value, name)
     return pygame.font.Font(asset_path, size)

@@ -65,6 +65,10 @@ class Game:
         self.is_fullscreen = False
 
         self.gamesave = settings.load_game()
+        settings.get_sound("start.mp3").play()
+        settings.get_music("music_1.wav")
+        pygame.mixer.music.set_volume(0.25)
+        pygame.mixer.music.play(-1)
 
     def toggle_fullscreen(self):
         if sys.platform == "emscripten":
@@ -83,9 +87,10 @@ class Game:
             if self.is_fullscreen: self.screen = pygame.display.set_mode((settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT), pygame.SCALED | pygame.FULLSCREEN)
             else: self.screen = pygame.display.set_mode((settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT), pygame.SCALED)
 
-    def trigger_transition(self, next_state):
+    def trigger_transition(self, next_state, freeze_time=0.15):
+        self.active_vfx.clear()
         self.in_transition = True
-        self.transition_timer = 0.15
+        self.transition_timer = freeze_time
         self.transition_step = settings.TransitionStep.FREEZE.value
         self.next_state = next_state
         self.fade_alpha = 0.0
@@ -140,7 +145,7 @@ class Game:
         self.opponent.hand.clear()
         self.opponent.pile = self.opponent.deck.copy()
         self.opponent.draw_cards()
-        if random.random() < 0.05: self.opponent.id = random.randint(settings.SECRET_ENEMY_ID_START, settings.MAX_SECRET_ENEMY_ID)
+        if random.random() < 0.01: self.opponent.id = random.randint(settings.SECRET_ENEMY_ID_START, settings.MAX_SECRET_ENEMY_ID)
         else: self.opponent.id = random.randint(settings.ENEMY_START_ID, settings.MAX_ENEMY_ID)
 
         self.current_turn: int = settings.Turns.PLAYER.value
@@ -207,24 +212,28 @@ class Game:
 
             if self.player.hp < 1:
                 if self.score > self.gamesave["highscore"]: self.gamesave["highscore"] = self.score
+                settings.get_sound("lose.mp3").play()
                 self.trigger_transition(settings.GameState.GAMEOVER.value)
             if self.opponent.hp < 1:
                 self.score += 1
                 self.gamesave["stat_points"] += 1
                 self.gamesave["gold"] += random.randint(1, 3)
                 self.setup_draft()
-                self.trigger_transition(settings.GameState.DRAFTING.value)
+                settings.get_sound("win.mp3").play()
+                self.trigger_transition(settings.GameState.DRAFTING.value, 0.5)
 
             if self.countdown <= 0.0:
                 if self.current_turn == settings.Turns.PLAYER.value:
                     if self.score > self.gamesave["highscore"]: self.gamesave["highscore"] = self.score
+                    settings.get_sound("lose.mp3").play()
                     self.trigger_transition(settings.GameState.GAMEOVER.value)
                 elif self.current_turn == settings.Turns.ENEMY.value:
                     self.score += 1
                     self.gamesave["stat_points"] += 1
                     self.gamesave["gold"] += random.randint(1, 3)
                     self.setup_draft()
-                    self.trigger_transition(settings.GameState.DRAFTING.value)
+                    settings.get_sound("win.mp3").play()
+                    self.trigger_transition(settings.GameState.DRAFTING.value, 0.5)
 
     def render(self):
         if self.state == settings.GameState.MAINMENU.value: self.render_main_menu()
@@ -676,19 +685,29 @@ class Game:
                             if event.key == pygame.K_ESCAPE: self.running = False
 
                         elif self.state == settings.GameState.PLAYING.value:
-                            if event.key == pygame.K_ESCAPE: self.state = settings.GameState.PAUSED.value
+                            if event.key == pygame.K_ESCAPE:
+                                settings.get_sound("button_click.wav").play()
+                                self.state = settings.GameState.PAUSED.value
 
                         elif self.state == settings.GameState.PAUSED.value:
-                            if event.key == pygame.K_ESCAPE: self.state = settings.GameState.PLAYING.value
+                            if event.key == pygame.K_ESCAPE:
+                                settings.get_sound("archetype_select.wav").play()
+                                self.state = settings.GameState.PLAYING.value
 
                         elif self.state == settings.GameState.ARCHETYPECHOOSING.value:
-                            if event.key == pygame.K_ESCAPE: self.trigger_transition(settings.GameState.MAINMENU.value)
+                            if event.key == pygame.K_ESCAPE:
+                                settings.get_sound("button_click.wav").play()
+                                self.trigger_transition(settings.GameState.MAINMENU.value)
 
                         elif self.state == settings.GameState.SETTINGSMENU.value:
-                            if event.key == pygame.K_ESCAPE: self.state = settings.GameState.MAINMENU.value
+                            if event.key == pygame.K_ESCAPE:
+                                settings.get_sound("button_click.wav").play()
+                                self.state = settings.GameState.MAINMENU.value
 
                         elif self.state == settings.GameState.STATMENU.value:
-                            if event.key == pygame.K_ESCAPE: self.state = settings.GameState.MAINMENU.value
+                            if event.key == pygame.K_ESCAPE:
+                                settings.get_sound("button_click.wav").play()
+                                self.state = settings.GameState.MAINMENU.value
 
                     elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
                         mouse_pos = event.pos
@@ -697,53 +716,81 @@ class Game:
                             for rect, card in self.draft_rects:
                                 if rect.collidepoint(mouse_pos):
                                     self.player.deck.append(card)
+                                    settings.get_sound("draft_select.wav").play()
                                     self.new_match()
                                     break
 
                             if self.draft_skip_rect.collidepoint(mouse_pos):
+                                settings.get_sound("draft_select.wav").play()
                                 self.new_match()
 
                         elif self.state == settings.GameState.MAINMENU.value:
-                            if self.menu_start_rect.collidepoint(mouse_pos): self.trigger_transition(settings.GameState.ARCHETYPECHOOSING.value)
-                            elif self.settings_menu_rect.collidepoint(mouse_pos): self.state = settings.GameState.SETTINGSMENU.value
-                            elif self.stat_menu_rect.collidepoint(mouse_pos): self.state = settings.GameState.STATMENU.value
+                            if self.menu_start_rect.collidepoint(mouse_pos):
+                                settings.get_sound("button_click.wav").play()
+                                self.trigger_transition(settings.GameState.ARCHETYPECHOOSING.value)
+                            elif self.settings_menu_rect.collidepoint(mouse_pos):
+                                settings.get_sound("button_click.wav").play()
+                                self.state = settings.GameState.SETTINGSMENU.value
+                            elif self.stat_menu_rect.collidepoint(mouse_pos):
+                                settings.get_sound("button_click.wav").play()
+                                self.state = settings.GameState.STATMENU.value
                             if sys.platform != "emscripten":
                                 if self.quit_rect.collidepoint(mouse_pos): self.running = False
 
                         elif self.state == settings.GameState.ARCHETYPECHOOSING.value:
                             for rect, archetype in self.archetype_menu_rects:
                                 if rect.collidepoint(mouse_pos):
+                                    settings.get_sound("archetype_select.wav").play()
                                     self.new_game(archetype)
-                            if self.back_rect.collidepoint(mouse_pos): self.trigger_transition(settings.GameState.MAINMENU.value)
+                            if self.back_rect.collidepoint(mouse_pos):
+                                settings.get_sound("button_click.wav").play()
+                                self.trigger_transition(settings.GameState.MAINMENU.value)
 
                         elif self.state == settings.GameState.GAMEOVER.value:
-                            if self.game_over_button_rect.collidepoint(mouse_pos): self.trigger_transition(settings.GameState.MAINMENU.value)
+                            if self.game_over_button_rect.collidepoint(mouse_pos):
+                                settings.get_sound("archetype_select.wav").play()
+                                self.trigger_transition(settings.GameState.MAINMENU.value)
 
                         elif self.state == settings.GameState.PAUSED.value:
-                            if self.pause_button_rect.collidepoint(mouse_pos): self.state = settings.GameState.PLAYING.value
+                            if self.pause_button_rect.collidepoint(mouse_pos):
+                                settings.get_sound("archetype_select.wav").play()
+                                self.state = settings.GameState.PLAYING.value
                             elif self.pause_menu_button_rect.collidepoint(mouse_pos):
+                                settings.get_sound("archetype_select.wav").play()
                                 if self.score > self.gamesave["highscore"]: self.gamesave["highscore"] = self.score
                                 self.trigger_transition(settings.GameState.MAINMENU.value)
 
                         elif self.state == settings.GameState.SETTINGSMENU.value:
-                            if self.back_rect.collidepoint(mouse_pos): self.state = settings.GameState.MAINMENU.value
-                            elif self.fullscreen_rect.collidepoint(mouse_pos): self.toggle_fullscreen()
+                            if self.back_rect.collidepoint(mouse_pos):
+                                settings.get_sound("button_click.wav").play()
+                                self.state = settings.GameState.MAINMENU.value
+                            elif self.fullscreen_rect.collidepoint(mouse_pos):
+                                settings.get_sound("button_click.wav").play()
+                                self.toggle_fullscreen()
                             if sys.platform != "emscripten":
-                                if self.wipe_data_rect.collidepoint(mouse_pos): self.gamesave = settings.EMPTY_SAVE
+                                if self.wipe_data_rect.collidepoint(mouse_pos):
+                                    settings.get_sound("lost.wav").play()
+                                    self.gamesave = settings.EMPTY_SAVE
 
                         elif self.state == settings.GameState.STATMENU.value:
-                            if self.back_rect.collidepoint(mouse_pos): self.state = settings.GameState.MAINMENU.value
+                            if self.back_rect.collidepoint(mouse_pos):
+                                settings.get_sound("button_click.wav").play()
+                                self.state = settings.GameState.MAINMENU.value
                             elif self.stat_hp_rect.collidepoint(mouse_pos):
+                                settings.get_sound("menu_hover.wav").play()
                                 if self.gamesave["stat_points"] > 0:
                                     self.gamesave["stat_points"] -= 1
                                     self.gamesave["hp_stat"] += 1
                             elif self.stat_shield_rect.collidepoint(mouse_pos):
+                                settings.get_sound("menu_hover.wav").play()
                                 if self.gamesave["stat_points"] > 0:
                                     self.gamesave["stat_points"] -= 1
                                     self.gamesave["shield_stat"] += 1
 
                         elif self.state == settings.GameState.PLAYING.value:
-                            if self.pause_rect.collidepoint(mouse_pos): self.state = settings.GameState.PAUSED.value
+                            if self.pause_rect.collidepoint(mouse_pos):
+                                settings.get_sound("button_click.wav").play()
+                                self.state = settings.GameState.PAUSED.value
 
                     if self.state == settings.GameState.PLAYING.value:
                         for obj in self.entities[:]: obj.handle_event(event, self)

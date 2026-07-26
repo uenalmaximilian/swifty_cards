@@ -54,9 +54,11 @@ class Card(misc.Entity):
                 game.last_card_id = self.card_type["id"]
                 game.last_action = settings.Actions.PLAYED
                 self.dead = True
+                if self.card_type["countd"] != 0: settings.get_sound("time.mp3").play()
             elif self.discard_button_rect.collidepoint(event.pos):
                 game.last_action = settings.Actions.DUMPED
                 self.dead = True
+                settings.get_sound("dump.mp3").play()
 
     def render(self, screen: pygame.Surface, spritesheets: dict[str, misc.Spritesheet], hidden: bool = False, scale: float = 1.0):
         if self.sprite is None:
@@ -189,13 +191,16 @@ class Enemy(misc.Contestant):
     def play_card(self):
         if not self.hand: return
         chosen_card, action = self.model.choose_card(self.hand, self, self.game)
-        self.game.last_action = settings.Actions.DUMPED
         if action == "play":
             self.game.countdown += chosen_card.card_type["countd"]
             self.game.player.take_dmg(chosen_card.card_type["dmg"])
             self.heal(hp=chosen_card.card_type["hp"], shield=chosen_card.card_type["shield"])
             self.game.last_card_id = chosen_card.card_type["id"]
             self.game.last_action = settings.Actions.PLAYED
+            if chosen_card.card_type["countd"] != 0: settings.get_sound("time.mp3").play()
+        else:
+            self.game.last_action = settings.Actions.DUMPED
+            settings.get_sound("dump.mp3").play()
         self.game.turn = settings.Turns.PLAYER.value
         chosen_card.dead = True
 
