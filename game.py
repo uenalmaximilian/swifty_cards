@@ -217,7 +217,7 @@ class Game:
             if self.player.hp < 1:
                 if self.score > self.gamesave["highscore"]: self.gamesave["highscore"] = self.score
                 settings.get_sound("lose.ogg").play()
-                self.trigger_transition(settings.GameState.GAMEOVER.value)
+                self.trigger_transition(settings.GameState.GAMEOVER.value, 1.0)
             if self.opponent.hp < 1:
                 self.score += 1
                 self.gamesave["stat_points"] += 1
@@ -230,7 +230,7 @@ class Game:
                 if self.current_turn == settings.Turns.PLAYER.value:
                     if self.score > self.gamesave["highscore"]: self.gamesave["highscore"] = self.score
                     settings.get_sound("lose.ogg").play()
-                    self.trigger_transition(settings.GameState.GAMEOVER.value)
+                    self.trigger_transition(settings.GameState.GAMEOVER.value, 1.0)
                 elif self.current_turn == settings.Turns.ENEMY.value:
                     self.score += 1
                     self.gamesave["stat_points"] += 1
