@@ -117,6 +117,7 @@ class Game:
         self.countdown = 30.0
         self.last_card_id = 0
         self.entities.clear()
+        self.player.turn_timer = 0.0
         self.trigger_transition(settings.GameState.PLAYING.value)
 
         self.player.hp = self.player.max_hp
