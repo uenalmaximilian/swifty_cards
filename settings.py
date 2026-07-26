@@ -169,20 +169,29 @@ class Actions(Enum):
     PLAYED = 1
     DUMPED = 2
 
+def resource_path(relative_path: str):
+    try: base_path = sys._MEIPASS
+    except AttributeError: base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
+
 def get_image(name: str):
-    asset_path = os.path.join(Directories.ASSETS.value, Directories.IMAGES.value, name)
+    relative = os.path.join(Directories.ASSETS.value, Directories.IMAGES.value, name)
+    asset_path = resource_path(relative)
     return pygame.image.load(asset_path).convert_alpha()
 
 def get_sound(name: str):
-    asset_path = os.path.join(Directories.ASSETS.value, Directories.SOUNDS.value, name)
+    relative = os.path.join(Directories.ASSETS.value, Directories.SOUNDS.value, name)
+    asset_path = resource_path(relative)
     return pygame.mixer.Sound(asset_path)
 
 def get_music(name: str):
-    asset_path = os.path.join(Directories.ASSETS.value, Directories.SOUNDS.value, name)
+    relative = os.path.join(Directories.ASSETS.value, Directories.SOUNDS.value, name)
+    asset_path = resource_path(relative)
     pygame.mixer.music.load(asset_path)
 
 def get_font(name: str, size: int):
-    asset_path = os.path.join(Directories.ASSETS.value, Directories.FONTS.value, name)
+    relative = os.path.join(Directories.ASSETS.value, Directories.FONTS.value, name)
+    asset_path = resource_path(relative)
     return pygame.font.Font(asset_path, size)
 
 def get_device_key():

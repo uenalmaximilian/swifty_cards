@@ -66,7 +66,7 @@ class Game:
 
         self.gamesave = settings.load_game()
         settings.get_sound("start.mp3").play()
-        settings.get_music("music_1.wav")
+        settings.get_music("music_1.mp3")
         pygame.mixer.music.set_volume(0.25)
         pygame.mixer.music.play(-1)
 
@@ -686,27 +686,27 @@ class Game:
 
                         elif self.state == settings.GameState.PLAYING.value:
                             if event.key == pygame.K_ESCAPE:
-                                settings.get_sound("button_click.wav").play()
+                                settings.get_sound("button_click.mp3").play()
                                 self.state = settings.GameState.PAUSED.value
 
                         elif self.state == settings.GameState.PAUSED.value:
                             if event.key == pygame.K_ESCAPE:
-                                settings.get_sound("archetype_select.wav").play()
+                                settings.get_sound("archetype_select.mp3").play()
                                 self.state = settings.GameState.PLAYING.value
 
                         elif self.state == settings.GameState.ARCHETYPECHOOSING.value:
                             if event.key == pygame.K_ESCAPE:
-                                settings.get_sound("button_click.wav").play()
+                                settings.get_sound("button_click.mp3").play()
                                 self.trigger_transition(settings.GameState.MAINMENU.value)
 
                         elif self.state == settings.GameState.SETTINGSMENU.value:
                             if event.key == pygame.K_ESCAPE:
-                                settings.get_sound("button_click.wav").play()
+                                settings.get_sound("button_click.mp3").play()
                                 self.state = settings.GameState.MAINMENU.value
 
                         elif self.state == settings.GameState.STATMENU.value:
                             if event.key == pygame.K_ESCAPE:
-                                settings.get_sound("button_click.wav").play()
+                                settings.get_sound("button_click.mp3").play()
                                 self.state = settings.GameState.MAINMENU.value
 
                     elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
@@ -716,23 +716,23 @@ class Game:
                             for rect, card in self.draft_rects:
                                 if rect.collidepoint(mouse_pos):
                                     self.player.deck.append(card)
-                                    settings.get_sound("draft_select.wav").play()
+                                    settings.get_sound("draft_select.mp3").play()
                                     self.new_match()
                                     break
 
                             if self.draft_skip_rect.collidepoint(mouse_pos):
-                                settings.get_sound("draft_select.wav").play()
+                                settings.get_sound("draft_select.mp3").play()
                                 self.new_match()
 
                         elif self.state == settings.GameState.MAINMENU.value:
                             if self.menu_start_rect.collidepoint(mouse_pos):
-                                settings.get_sound("button_click.wav").play()
+                                settings.get_sound("button_click.mp3").play()
                                 self.trigger_transition(settings.GameState.ARCHETYPECHOOSING.value)
                             elif self.settings_menu_rect.collidepoint(mouse_pos):
-                                settings.get_sound("button_click.wav").play()
+                                settings.get_sound("button_click.mp3").play()
                                 self.state = settings.GameState.SETTINGSMENU.value
                             elif self.stat_menu_rect.collidepoint(mouse_pos):
-                                settings.get_sound("button_click.wav").play()
+                                settings.get_sound("button_click.mp3").play()
                                 self.state = settings.GameState.STATMENU.value
                             if sys.platform != "emscripten":
                                 if self.quit_rect.collidepoint(mouse_pos): self.running = False
@@ -740,56 +740,56 @@ class Game:
                         elif self.state == settings.GameState.ARCHETYPECHOOSING.value:
                             for rect, archetype in self.archetype_menu_rects:
                                 if rect.collidepoint(mouse_pos):
-                                    settings.get_sound("archetype_select.wav").play()
+                                    settings.get_sound("archetype_select.mp3").play()
                                     self.new_game(archetype)
                             if self.back_rect.collidepoint(mouse_pos):
-                                settings.get_sound("button_click.wav").play()
+                                settings.get_sound("button_click.mp3").play()
                                 self.trigger_transition(settings.GameState.MAINMENU.value)
 
                         elif self.state == settings.GameState.GAMEOVER.value:
                             if self.game_over_button_rect.collidepoint(mouse_pos):
-                                settings.get_sound("archetype_select.wav").play()
+                                settings.get_sound("archetype_select.mp3").play()
                                 self.trigger_transition(settings.GameState.MAINMENU.value)
 
                         elif self.state == settings.GameState.PAUSED.value:
                             if self.pause_button_rect.collidepoint(mouse_pos):
-                                settings.get_sound("archetype_select.wav").play()
+                                settings.get_sound("archetype_select.mp3").play()
                                 self.state = settings.GameState.PLAYING.value
                             elif self.pause_menu_button_rect.collidepoint(mouse_pos):
-                                settings.get_sound("archetype_select.wav").play()
+                                settings.get_sound("archetype_select.mp3").play()
                                 if self.score > self.gamesave["highscore"]: self.gamesave["highscore"] = self.score
                                 self.trigger_transition(settings.GameState.MAINMENU.value)
 
                         elif self.state == settings.GameState.SETTINGSMENU.value:
                             if self.back_rect.collidepoint(mouse_pos):
-                                settings.get_sound("button_click.wav").play()
+                                settings.get_sound("button_click.mp3").play()
                                 self.state = settings.GameState.MAINMENU.value
                             elif self.fullscreen_rect.collidepoint(mouse_pos):
-                                settings.get_sound("button_click.wav").play()
+                                settings.get_sound("button_click.mp3").play()
                                 self.toggle_fullscreen()
                             if sys.platform != "emscripten":
                                 if self.wipe_data_rect.collidepoint(mouse_pos):
-                                    settings.get_sound("lost.wav").play()
+                                    settings.get_sound("lost.mp3").play()
                                     self.gamesave = settings.EMPTY_SAVE
 
                         elif self.state == settings.GameState.STATMENU.value:
                             if self.back_rect.collidepoint(mouse_pos):
-                                settings.get_sound("button_click.wav").play()
+                                settings.get_sound("button_click.mp3").play()
                                 self.state = settings.GameState.MAINMENU.value
                             elif self.stat_hp_rect.collidepoint(mouse_pos):
-                                settings.get_sound("menu_hover.wav").play()
+                                settings.get_sound("menu_hover.mp3").play()
                                 if self.gamesave["stat_points"] > 0:
                                     self.gamesave["stat_points"] -= 1
                                     self.gamesave["hp_stat"] += 1
                             elif self.stat_shield_rect.collidepoint(mouse_pos):
-                                settings.get_sound("menu_hover.wav").play()
+                                settings.get_sound("menu_hover.mp3").play()
                                 if self.gamesave["stat_points"] > 0:
                                     self.gamesave["stat_points"] -= 1
                                     self.gamesave["shield_stat"] += 1
 
                         elif self.state == settings.GameState.PLAYING.value:
                             if self.pause_rect.collidepoint(mouse_pos):
-                                settings.get_sound("button_click.wav").play()
+                                settings.get_sound("button_click.mp3").play()
                                 self.state = settings.GameState.PAUSED.value
 
                     if self.state == settings.GameState.PLAYING.value:
