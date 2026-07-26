@@ -42,7 +42,7 @@ class Contestant(Entity):
         self.archetype = archetype if archetype is not None else None
 
     def take_dmg(self, amount: int):
-        if amount > 0: settings.get_sound("damage.mp3").play()
+        if amount > 0: settings.get_sound("damage.ogg").play()
 
         if self.shield > 0:
             self.shield -= amount
@@ -57,9 +57,9 @@ class Contestant(Entity):
         self.shield += shield
         self.hp = max(0, min(self.hp, self.max_hp))
         self.shield = max(0, min(self.shield, self.max_shield))
-        if hp == 0 and shield != 0: settings.get_sound("shield.mp3").play()
-        elif hp != 0 and shield == 0: settings.get_sound("heal.mp3").play()
-        elif hp != 0 and shield != 0: settings.get_sound("heal.mp3").play()
+        if hp == 0 and shield != 0: settings.get_sound("shield.ogg").play()
+        elif hp != 0 and shield == 0: settings.get_sound("heal.ogg").play()
+        elif hp != 0 and shield != 0: settings.get_sound("heal.ogg").play()
 
 class VFXText:
     def __init__(self, surface, x, y, duration=1.2):
