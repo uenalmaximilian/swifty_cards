@@ -642,7 +642,7 @@ class Game:
 
         btn_w, btn_h = 64, 24
         btn_x = settings.SCREEN_WIDTH // 2
-        btn_y = settings.SCREEN_HEIGHT // 2 + 30
+        btn_y = settings.SCREEN_HEIGHT // 2 - 30
 
         self.pause_button_rect = pygame.Rect(0, 0, btn_w, btn_h)
         self.pause_button_rect.center = (btn_x, btn_y)
@@ -655,7 +655,7 @@ class Game:
 
         btn_w, btn_h = 64, 24
         btn_x = settings.SCREEN_WIDTH // 2
-        btn_y = settings.SCREEN_HEIGHT // 2 + 60
+        btn_y = settings.SCREEN_HEIGHT // 2
 
         self.pause_menu_button_rect = pygame.Rect(0, 0, btn_w, btn_h)
         self.pause_menu_button_rect.center = (btn_x, btn_y)
@@ -665,6 +665,46 @@ class Game:
         pause_menu_button_image = self.spritesheets["buttons"].get_image(192, 0, 32, 12)
         scaled_image = pygame.transform.scale(pause_menu_button_image, (btn_w, btn_h))
         self.surface.blit(scaled_image, self.pause_menu_button_rect)
+
+        mouse_pos = pygame.mouse.get_pos()
+        mouse = pygame.mouse.get_pressed()
+
+        step_size = 0.05
+        slider_w, slider_h = 100, 24
+        slider_container_rect = pygame.Rect(0, 0, slider_w, slider_h)
+        slider_container_rect.center = (settings.SCREEN_WIDTH // 2, settings.SCREEN_HEIGHT // 2 + 40)
+        min_x = (slider_container_rect.left + 12)
+        max_x = (slider_container_rect.right - 12)
+        slider_range = max_x - min_x
+        pygame.draw.rect(self.surface, "#1D156B", slider_container_rect, width=0, border_radius=10)
+        if not self.sfx_slider_rect:
+            self.sfx_slider_rect = pygame.Rect(slider_container_rect.x, slider_container_rect.y, 24, 24)
+            self.sfx_slider_rect.centerx = min_x + (self.gamesave["sfx"] * slider_range)
+        pygame.draw.rect(self.surface, "#4B3AE2", self.sfx_slider_rect, width=0, border_radius=10)
+        pygame.draw.rect(self.surface, "#DBDBDB", self.sfx_slider_rect, width=2, border_radius=10)
+        text = self.font.render("SFX ", False, (230, 230, 230))
+        self.surface.blit(text, text.get_rect(midright=(slider_container_rect.midleft)))
+        if slider_container_rect.collidepoint(mouse_pos) and mouse[0]:
+            clamped_val = min(max(0.0, (mouse_pos[0] - min_x) / slider_range), 1.0)
+            self.gamesave["sfx"] = round(clamped_val / step_size) * step_size
+            settings.sfx_volume = self.gamesave["sfx"]
+            self.sfx_slider_rect.centerx = min_x + (self.gamesave["sfx"] * slider_range)
+
+        slider_container_rect = pygame.Rect(0, 0, slider_w, slider_h)
+        slider_container_rect.center = (settings.SCREEN_WIDTH // 2, settings.SCREEN_HEIGHT // 2 + 70)
+        pygame.draw.rect(self.surface, "#1D156B", slider_container_rect, width=0, border_radius=10)
+        if not self.music_slider_rect:
+            self.music_slider_rect = pygame.Rect(slider_container_rect.x, slider_container_rect.y, 24, 24)
+            self.music_slider_rect.centerx = min_x + (self.gamesave["music"] * slider_range)
+        pygame.draw.rect(self.surface, "#4B3AE2", self.music_slider_rect, width=0, border_radius=10)
+        pygame.draw.rect(self.surface, "#DBDBDB", self.music_slider_rect, width=2, border_radius=10)
+        text = self.font.render("Music ", False, (230, 230, 230))
+        self.surface.blit(text, text.get_rect(midright=(slider_container_rect.midleft)))
+        if slider_container_rect.collidepoint(mouse_pos) and mouse[0]:
+            clamped_val = min(max(0.0, (mouse_pos[0] - min_x) / slider_range), 1.0)
+            self.gamesave["music"] = round(clamped_val / step_size) * step_size
+            pygame.mixer.music.set_volume(self.gamesave["music"])
+            self.music_slider_rect.centerx = min_x + (self.gamesave["music"] * slider_range)
 
     def render_game_over(self):
         self.surface.fill((25, 10, 10))
