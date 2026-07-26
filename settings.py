@@ -59,23 +59,23 @@ class Turns(Enum):
     ENEMY = 2
 
 class CardTypes(Enum):
-    NONE            = {"id": 0, "countd": 0, "dmg": 0, "hp": 0, "shield": 0}
-    COUNTDOWN_DEC_1 = {"id": 1, "countd": -1, "dmg": 0, "hp": 0, "shield": 0}
-    COUNTDOWN_DEC_2 = {"id": 2, "countd": -3, "dmg": 0, "hp": 0, "shield": 0}
-    COUNTDOWN_DEC_3 = {"id": 3, "countd": -5, "dmg": 0, "hp": 0, "shield": 0}
-    COUNTDOWN_INC_1 = {"id": 4, "countd": 1, "dmg": 0, "hp": 0, "shield": 0}
-    COUNTDOWN_INC_2 = {"id": 5, "countd": 3, "dmg": 0, "hp": 0, "shield": 0}
-    COUNTDOWN_INC_3 = {"id": 6, "countd": 5, "dmg": 0, "hp": 0, "shield": 0}
-    DMG_1           = {"id": 7, "countd": 0, "dmg": 2, "hp": 0, "shield": 0}
-    DMG_2           = {"id": 8, "countd": 0, "dmg": 5, "hp": 0, "shield": 0}
-    DMG_3           = {"id": 9, "countd": 0, "dmg": 8, "hp": 0, "shield": 0}
-    HP_1            = {"id": 10, "countd": 0, "dmg": 0, "hp": 3, "shield": 0}
-    HP_2            = {"id": 11, "countd": 0, "dmg": 0, "hp": 5, "shield": 0}
-    HP_3            = {"id": 12, "countd": 0, "dmg": 0, "hp": 7, "shield": 0}
-    SHIELD_1        = {"id": 13, "countd": 0, "dmg": 0, "hp": 0, "shield": 1}
-    SHIELD_2        = {"id": 14, "countd": 0, "dmg": 0, "hp": 0, "shield": 2}
-    SHIELD_3        = {"id": 15, "countd": 0, "dmg": 0, "hp": 0, "shield": 4}
-    TETO            = {"id": 99, "countd": 100, "dmg": 100, "hp": 100, "shield": 100}
+    NONE            = {"id": 0, "countd": 0, "dmg": 0, "hp": 0, "shield": 0, "name": "Blank"}
+    COUNTDOWN_DEC_1 = {"id": 1, "countd": -1, "dmg": 0, "hp": 0, "shield": 0, "name": "-1 Countdown"}
+    COUNTDOWN_DEC_2 = {"id": 2, "countd": -3, "dmg": 0, "hp": 0, "shield": 0, "name": "-3 Countdown"}
+    COUNTDOWN_DEC_3 = {"id": 3, "countd": -5, "dmg": 0, "hp": 0, "shield": 0, "name": "-5 Countdown"}
+    COUNTDOWN_INC_1 = {"id": 4, "countd": 1, "dmg": 0, "hp": 0, "shield": 0, "name": "+1 Countdown"}
+    COUNTDOWN_INC_2 = {"id": 5, "countd": 3, "dmg": 0, "hp": 0, "shield": 0, "name": "+3 Countdown"}
+    COUNTDOWN_INC_3 = {"id": 6, "countd": 5, "dmg": 0, "hp": 0, "shield": 0, "name": "+5 Countdown"}
+    DMG_1           = {"id": 7, "countd": 0, "dmg": 2, "hp": 0, "shield": 0, "name": "-2 DMG"}
+    DMG_2           = {"id": 8, "countd": 0, "dmg": 5, "hp": 0, "shield": 0, "name": "-5 DMG"}
+    DMG_3           = {"id": 9, "countd": 0, "dmg": 8, "hp": 0, "shield": 0, "name": "-8 DMG"}
+    HP_1            = {"id": 10, "countd": 0, "dmg": 0, "hp": 3, "shield": 0, "name": "+3 HP"}
+    HP_2            = {"id": 11, "countd": 0, "dmg": 0, "hp": 5, "shield": 0, "name": "+5 HP"}
+    HP_3            = {"id": 12, "countd": 0, "dmg": 0, "hp": 7, "shield": 0, "name": "+7 HP"}
+    SHIELD_1        = {"id": 13, "countd": 0, "dmg": 0, "hp": 0, "shield": 1, "name": "+1 Shield"}
+    SHIELD_2        = {"id": 14, "countd": 0, "dmg": 0, "hp": 0, "shield": 2, "name": "+2 Shield"}
+    SHIELD_3        = {"id": 15, "countd": 0, "dmg": 0, "hp": 0, "shield": 4, "name": "+4 Shield"}
+    TETO            = {"id": 99, "countd": 100, "dmg": 100, "hp": 100, "shield": 100, "name": "Teto"}
 
     @classmethod
     def get_by_id(self, card_id):

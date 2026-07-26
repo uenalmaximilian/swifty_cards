@@ -6,6 +6,7 @@ import random
 import math
 import sys
 import asyncio
+from collections import Counter
 
 class Game:
     def __init__(self, entities: list[misc.Entity] = None):
@@ -37,6 +38,7 @@ class Game:
         self.score = 0
         self.last_action: settings.Actions = None
         self.active_vfx: list[misc.VFXText] = []
+        self.last_enemy_id = None
 
         self.draft_rects: list[pygame.Rect] = []
         self.draft_options: list[cards.Card] = []
@@ -57,6 +59,7 @@ class Game:
         self.pause_rect: pygame.Rect = None
         self.sfx_slider_rect: pygame.Rect = None
         self.music_slider_rect: pygame.Rect = None
+        self.card_stack_rect: pygame.Rect = None
 
         self.in_transition = False
         self.transition_timer = 0.0
@@ -151,6 +154,10 @@ class Game:
         self.opponent.draw_cards()
         if random.random() < 0.01: self.opponent.id = random.randint(settings.SECRET_ENEMY_ID_START, settings.MAX_SECRET_ENEMY_ID)
         else: self.opponent.id = random.randint(settings.ENEMY_START_ID, settings.MAX_ENEMY_ID)
+        while self.opponent.id == self.last_enemy_id:
+            if random.random() < 0.01: self.opponent.id = random.randint(settings.SECRET_ENEMY_ID_START, settings.MAX_SECRET_ENEMY_ID)
+            else: self.opponent.id = random.randint(settings.ENEMY_START_ID, settings.MAX_ENEMY_ID)
+        self.last_enemy_id = self.opponent.id
 
         self.current_turn: int = settings.Turns.PLAYER.value
         self.turn: int = self.current_turn
@@ -201,8 +208,8 @@ class Game:
                 else:
                     vfx_string = ""
                     for attr, value in settings.CardTypes.get_by_id(self.last_card_id).items():
-                        string_dict = {"countd": "Time", "dmg": "Damage", "hp": "HP", "shield": "Shield"}
-                        if attr != "id" and value != 0:
+                        string_dict = {"countd": "Countdown", "dmg": "DMG", "hp": "HP", "shield": "Shield"}
+                        if attr not in ["id", "name"] and value != 0:
                             vfx_string += f"{"+" if value > 0 else ""}{value} {string_dict[attr]}\n"
                 vfx_text = self.contestant_font.render(f"{vfx_string.strip()}!", False, (200, 200, 200))
                 if self.current_turn == settings.Turns.PLAYER.value: vfx_x, vfx_y = 53, 103
@@ -593,6 +600,23 @@ class Game:
         archetype_rect = enemy_text.get_rect()
         archetype_rect.midtop = (enemy_max_shield_rect.centerx, enemy_max_shield_rect.bottom + 4)
         self.surface.blit(enemy_text, archetype_rect)
+
+        btn_w, btn_h = 58, 80
+        self.card_stack_rect = pygame.Rect(0, 0, btn_w, btn_h)
+        self.card_stack_rect.bottomright = (settings.SCREEN_WIDTH - 5, settings.SCREEN_HEIGHT - 5)
+        if settings.DEBUG_MODE: pygame.draw.rect(self.surface, settings.DEBUG_COLORS.COLOR_3.value, self.card_stack_rect, width=0)
+        card_stack_image = self.spritesheets["misc"].get_image(0, 39, btn_w, btn_h)
+        self.surface.blit(card_stack_image, self.card_stack_rect)
+        mouse_pos = pygame.mouse.get_pos()
+        if self.card_stack_rect.collidepoint(mouse_pos):
+            card_counts = Counter(card.card_type["name"] for card in self.player.deck)
+            deck_string = [f"{count}x {name}" if count > 1 else name for name, count in card_counts.items()]
+            tooltip_text = self.contestant_font.render(f"{"\n".join(deck_string)}", False, (230, 230, 230))
+            tooltip_text_rect = tooltip_text.get_rect()
+            tooltip_rect = pygame.Rect(0, 0, tooltip_text_rect.width, tooltip_text_rect.height)
+            tooltip_rect.bottomright = mouse_pos
+            pygame.draw.rect(self.surface, (20, 20, 20), tooltip_rect, width=0)
+            self.surface.blit(tooltip_text, tooltip_rect)
 
     def render_draft(self):
         self.surface.fill((25, 25, 25))
